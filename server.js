@@ -5,7 +5,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const APP_VERSION = 'v4.0_full_system';
+const APP_VERSION = 'v4.1_full_system';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
