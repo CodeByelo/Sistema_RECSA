@@ -451,7 +451,7 @@ app.post('/api/config/:key', async (req, res) => {
 app.get('/api/status', async (req, res) => {
   try {
     const dbCheck = await pool.query('SELECT NOW()');
-    res.json({ status: 'ok', database: 'connected', time: dbCheck.rows[0].now });
+    res.json({ status: 'ok', database: 'connected', version: 'v3.1_sigma', time: dbCheck.rows[0].now });
   } catch (error) {
     res.status(500).json({ status: 'error', database: 'disconnected', error: error.message });
   }

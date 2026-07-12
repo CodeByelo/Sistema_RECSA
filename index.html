@@ -2398,6 +2398,7 @@
            0. CONEXIÓN SUPABASE (BACKEND SYNC)
            ========================================================================== */
         let SERVER_CONNECTED = false;
+        const APP_VERSION = 'v3.1_sigma';
         // Detect automatically if running on production (same server origin) or dev local file
         const SERVER_URL = window.location.origin.includes('file://') ? 'http://localhost:3000' : window.location.origin;
 
@@ -2411,6 +2412,15 @@
                     const status = await res.json();
                     if (status.status === 'ok' && status.database === 'connected') {
                         SERVER_CONNECTED = true;
+                        
+                        // Detectar si el servidor se actualizó a una versión más reciente
+                        if (status.version && status.version !== APP_VERSION) {
+                            console.log('¡Nueva versión del servidor detectada! Recargando limpio...');
+                            localStorage.clear();
+                            localStorage.setItem('recsa_data_version', 'v3.0_governor_release_updated_final');
+                            window.location.reload();
+                        }
+                        
                         return true;
                     }
                 }
@@ -2639,6 +2649,11 @@
                 await syncDataFromServer();
             }
             updateSyncStatusUI();
+
+            // Verificar actualizaciones de código en segundo plano cada 5 segundos
+            setInterval(async () => {
+                await checkServerConnection();
+            }, 5000);
 
             renderHero();
             renderCandidate();
