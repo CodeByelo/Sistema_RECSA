@@ -1,0 +1,65 @@
+========================================================================
+     SISTEMA RECSA - LISTADO OFICIAL DE CREDENCIALES DE ACCESO
+========================================================================
+
+A continuación se detallan los usuarios, contraseñas (firmas cifradas)
+y roles asignados en el Sistema de Solvencia Ciudadana (SSC), el MDC
+policial y la red clasificada SIGMA-7.
+
+------------------------------------------------------------------------
+1. ACCESO PÚBLICO / CIVIL
+------------------------------------------------------------------------
+Nombre: Esteban Russo
+Usuario: civil
+Contraseña: 1234
+Rol/Permisos: Acceso básico de consulta a solvencia ciudadana.
+
+------------------------------------------------------------------------
+2. INSPECCIÓN FISCAL / ADMINISTRACIÓN DE CAMPAÑA
+------------------------------------------------------------------------
+Nombre: Dra. Valeria Miller
+Usuario: funcionario
+Contraseña: gov2024
+Rol/Permisos: Inspector Fiscal RECSA. Acceso a consulta de solvencia
+              y panel de administración para modificar noticias, héroe
+              y propuestas de la Landing Page.
+
+------------------------------------------------------------------------
+3. AUDITORÍA BANCARIA (FLEECA BANK)
+------------------------------------------------------------------------
+Nombre: Marcus Sterling
+Usuario: banco_maz
+Contraseña: bank999
+Rol/Permisos: Auditor Fleeca Bank. Acceso a consulta de solvencia y
+              aprobación/registro de préstamos cívicos.
+
+------------------------------------------------------------------------
+4. ADMINISTRACIÓN DE SEGURIDAD (SHERIFF DEPARTMENT)
+------------------------------------------------------------------------
+Nombre: Sheriff A. Rodriguez
+Usuario: admin_lssd
+Contraseña: alpha123
+Rol/Permisos: Sheriff Department Admin. Acceso a consulta de solvencia,
+              panel de base de datos criminal policial (MDC) para
+              búsqueda y emisión de arrestos/multas.
+
+------------------------------------------------------------------------
+5. COMANDANCIA POLICIAL (LSPD)
+------------------------------------------------------------------------
+Nombre: Cmte. Ricardo Santos
+Usuario: cmte_santos
+Contraseña: lspd#2024
+Rol/Permisos: Comandante General LSPD. Acceso a consulta de solvencia
+              y base de datos criminal policial (MDC) para registro de
+              infracciones y arrestos.
+
+------------------------------------------------------------------------
+6. ACCESO CLASIFICADO (BACKDOOR / TERMINAL DE INTELIGENCIA)
+------------------------------------------------------------------------
+Nombre: Ghost Protocol
+Usuario: backdoor
+Contraseña: classified
+Rol/Permisos: Infiltrado Rebelde. Acceso a la terminal SIGMA-7 para
+              consultar nóminas de oficiales, horarios de blindados
+              Gruppe 6, lavado de dinero y proyectos secretos del FIB.
+------------------------------------------------------------------------
