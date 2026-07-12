@@ -1935,6 +1935,9 @@
             <button id="btn-intranet-landing" class="btn btn-secondary" onclick="switchIntranetTab('landing')">
                 <i class="fa-solid fa-pen-to-square"></i> Administrar Portal Público
             </button>
+            <button id="btn-intranet-sigma" class="btn btn-secondary" onclick="switchIntranetTab('sigma')" style="display: none;">
+                <i class="fa-solid fa-radiation"></i> Administrar Red SIGMA-7
+            </button>
         </div>
 
         <!-- Contenedor Principal SSC -->
@@ -2468,6 +2471,34 @@
                         });
                     }
                 }
+
+                // 6. SIGMA-7 Classified routes
+                const resRoutes = await fetch(`${SERVER_URL}/api/config/classified_armored_routes`);
+                if (resRoutes.ok) {
+                    const val = await resRoutes.json();
+                    ARMORED_ROUTES = val || [];
+                }
+
+                // 7. SIGMA-7 Classified police payroll
+                const resPayroll = await fetch(`${SERVER_URL}/api/config/classified_police_payroll`);
+                if (resPayroll.ok) {
+                    const val = await resPayroll.json();
+                    POLICE_PAYROLL = val || [];
+                }
+
+                // 8. SIGMA-7 Classified businesses
+                const resBiz = await fetch(`${SERVER_URL}/api/config/classified_investigated_businesses`);
+                if (resBiz.ok) {
+                    const val = await resBiz.json();
+                    INVESTIGATED_BUSINESSES = val || [];
+                }
+
+                // 9. SIGMA-7 Classified projects
+                const resProj = await fetch(`${SERVER_URL}/api/config/classified_secret_projects`);
+                if (resProj.ok) {
+                    const val = await resProj.json();
+                    SECRET_PROJECTS = val || [];
+                }
             } catch (e) {
                 console.error('Error syncing from Supabase:', e);
             }
@@ -2551,35 +2582,16 @@
         let CITIZENS = JSON.parse(localStorage.getItem('recsa_citizens_data')) || DEFAULT_CITIZENS;
 
         // Rutas y Matrículas de Blindados Gruppe 6
-        const ARMORED_ROUTES = [
-            { id: "G6-801 (Matrícula: 45KL90)", route: "Central Fleeca Bank ➔ Aeropuerto de Los Santos", eta: "14:30 hs", cash: "$1,800,000", escort: "Alto (2 patrullas)", status: "EN CURSO" },
-            { id: "G6-802 (Matrícula: 12OP88)", route: "Sede Central RECSA (Verdant Bluffs) ➔ Maze Bank Central", eta: "16:00 hs", cash: "$4,500,000", escort: "Máximo (Escolta Blindado)", status: "PROGRAMADO" },
-            { id: "G6-803 (Matrícula: 99QA23)", route: "Fleeca Bank (Great Ocean Hwy) ➔ Depósito Central Paleto", eta: "18:45 hs", cash: "$850,000", escort: "Bajo (1 patrulla)", status: "PROGRAMADO" },
-            { id: "G6-804 (Matrícula: 77ZZ11)", route: "Casino Diamond ➔ Sede Central RECSA", eta: "21:15 hs", cash: "$3,200,000", escort: "Medio (1 blindado)", status: "EN TRÁNSITO" }
-        ];
+        let ARMORED_ROUTES = [];
 
         // Nómina Oficial del Estado / Fuerza de Policía
-        const POLICE_PAYROLL = [
-            { badge: "LSPD-01", name: "Jefe Andrew McTavish", rank: "Chief of Police", dept: "Dirección Central LSPD", salary: "$45,000 / semana", status: "ACTIVO" },
-            { badge: "LSSD-12", name: "Capitán Samuel Sterling", rank: "Sheriff Captain", dept: "Sheriff Paleto Bay", salary: "$38,000 / semana", status: "ACTIVO" },
-            { badge: "LSPD-44", name: "Teniente Donald O'Conner", rank: "Lieutenant", dept: "Homicidios / Antidroga LSPD", salary: "$32,000 / semana", status: "BAJO INVESTIGACIÓN" },
-            { badge: "LSSD-88", name: "Agente Ronald Briggs", rank: "Deputy Sheriff", dept: "Patrulla Los Santos Country", salary: "$19,000 / semana", status: "SUSPENDIDO" }
-        ];
+        let POLICE_PAYROLL = [];
 
         // Negocios Investigados por Lavado de Dinero
-        const INVESTIGATED_BUSINESSES = [
-            { ref: "N-501", name: "Tequi-la-la Bar", owner: "Trevor Philips", suspicion: "Crítico", lastInspection: "10/Jul/2026", alertType: "critica" },
-            { ref: "N-502", name: "Premium Deluxe Motorsport", owner: "Simeon Yetarian", suspicion: "Alto", lastInspection: "01/Jul/2026", alertType: "media" },
-            { ref: "N-503", name: "Vanilla Unicorn Club", owner: "Fideicomiso RECSA", suspicion: "Crítico", lastInspection: "08/Jul/2026", alertType: "critica" },
-            { ref: "N-504", name: "Los Santos Custom (Muelle)", owner: "Hao Chen", suspicion: "Bajo", lastInspection: "20/Jun/2026", alertType: "baja" }
-        ];
+        let INVESTIGATED_BUSINESSES = [];
 
         // Proyectos Secretos de Inteligencia (Backdoor)
-        const SECRET_PROJECTS = [
-            { id: "P-01", code: "PROYECTO HUMANE-LABS", clearance: "Coordenadas: 1402, -891, 14", desc: "Desarrollo de patógenos experimentales y equipamiento militar. Las muestras se custodian en el ala subterránea norte del laboratorio Humane.", critical: true },
-            { id: "P-02", code: "SISTEMA OJO EN EL CIELO", clearance: "Coordenadas: 402, -189, 22", desc: "Monitoreo satelital y grabación masiva de teléfonos celulares en Los Santos. El servidor maestro está en el sótano del Ayuntamiento.", critical: false },
-            { id: "P-03", code: "OPERACIÓN CHILIAD", clearance: "Coordenadas: 241, 1928, 900", desc: "Radares de interceptación de ondas militares clandestinos ubicados en la cima del Monte Chiliad. Acceso restringido a oficiales autorizados.", critical: true }
-        ];
+        let SECRET_PROJECTS = [];
 
         // Configuración por defecto de la Landing Page
         const DEFAULT_LANDING_CONFIG = {
@@ -3450,6 +3462,7 @@
             const btnPolice = document.getElementById('btn-intranet-police');
             const btnLanding = document.getElementById('btn-intranet-landing');
             const btnLoans = document.getElementById('btn-intranet-loans');
+            const btnSigma = document.getElementById('btn-intranet-sigma');
             
             if (!btnSsc || !btnPolice || !btnLanding || !btnLoans) return;
             
@@ -3457,6 +3470,7 @@
             btnPolice.className = "btn btn-secondary";
             btnLanding.className = "btn btn-secondary";
             btnLoans.className = "btn btn-secondary";
+            if (btnSigma) btnSigma.className = "btn btn-secondary";
             
             if (tabName === 'ssc') {
                 document.getElementById('tab-intranet-ssc').classList.add('active');
@@ -3485,10 +3499,225 @@
                 document.getElementById('tab-intranet-loans').classList.add('active');
                 btnLoans.className = "btn btn-blue";
                 renderLoansManagementList();
+            } else if (tabName === 'sigma') {
+                document.getElementById('tab-intranet-sigma').classList.add('active');
+                if (btnSigma) btnSigma.className = "btn btn-blue";
+                switchSigmaSubTab('blindados');
             } else if (tabName === 'civil') {
                 document.getElementById('tab-intranet-civil').classList.add('active');
                 renderCivilPortal();
                 switchCivilTab('summary');
+            }
+        }
+
+        // ==========================================================================
+        // LÓGICA DE ADMINISTRACIÓN DE RED SIGMA-7 (GOBERNADOR)
+        // ==========================================================================
+        let activeSigmaSubTab = 'blindados';
+
+        function switchSigmaSubTab(subTabName) {
+            activeSigmaSubTab = subTabName;
+            const subTabs = document.querySelectorAll('.sigma-sub-tab');
+            subTabs.forEach(tab => tab.style.display = 'none');
+            document.getElementById(`sigma-sub-${subTabName}`).style.display = 'block';
+
+            const buttons = [
+                { id: 'btn-sigma-sub-blindados', name: 'blindados' },
+                { id: 'btn-sigma-sub-nomina', name: 'nomina' },
+                { id: 'btn-sigma-sub-negocios', name: 'negocios' },
+                { id: 'btn-sigma-sub-secretos', name: 'secretos' }
+            ];
+
+            buttons.forEach(btn => {
+                const el = document.getElementById(btn.id);
+                if (el) {
+                    if (btn.name === subTabName) {
+                        el.className = "btn btn-blue";
+                    } else {
+                        el.className = "btn btn-secondary";
+                    }
+                }
+            });
+
+            renderSigmaManagementList();
+        }
+
+        function renderSigmaManagementList() {
+            if (activeSigmaSubTab === 'blindados') {
+                const tbody = document.getElementById('sigma-blindados-list');
+                if (tbody) {
+                    tbody.innerHTML = ARMORED_ROUTES.map(item => `
+                        <tr>
+                            <td><strong>${item.id}</strong></td>
+                            <td>${item.route}</td>
+                            <td>${item.eta}</td>
+                            <td>${item.cash}</td>
+                            <td>${item.escort}</td>
+                            <td><span style="font-weight: 800; color: var(--recsa-green);">${item.status}</span></td>
+                            <td>
+                                <button class="btn btn-danger" style="font-size: 0.7rem; padding: 4px 8px; background: var(--color-danger); border: none;" onclick="deleteSigmaItem('blindados', '${item.id}')">
+                                    <i class="fa-solid fa-trash"></i> Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="7" style="text-align: center; color: var(--color-muted); padding: 20px;">No hay rutas de blindados registradas.</td></tr>';
+                }
+            } else if (activeSigmaSubTab === 'nomina') {
+                const tbody = document.getElementById('sigma-nomina-list');
+                if (tbody) {
+                    tbody.innerHTML = POLICE_PAYROLL.map(item => `
+                        <tr>
+                            <td><strong>${item.badge}</strong></td>
+                            <td>${item.name}</td>
+                            <td>${item.rank}</td>
+                            <td>${item.dept}</td>
+                            <td>${item.salary}</td>
+                            <td><span style="font-weight: 800; color: var(--color-success);">${item.status}</span></td>
+                            <td>
+                                <button class="btn btn-danger" style="font-size: 0.7rem; padding: 4px 8px; background: var(--color-danger); border: none;" onclick="deleteSigmaItem('nomina', '${item.badge}')">
+                                    <i class="fa-solid fa-trash"></i> Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="7" style="text-align: center; color: var(--color-muted); padding: 20px;">No hay oficiales registrados en la nómina.</td></tr>';
+                }
+            } else if (activeSigmaSubTab === 'negocios') {
+                const tbody = document.getElementById('sigma-negocios-list');
+                if (tbody) {
+                    tbody.innerHTML = INVESTIGATED_BUSINESSES.map(item => `
+                        <tr>
+                            <td><strong>${item.ref}</strong></td>
+                            <td>${item.name}</td>
+                            <td>${item.owner}</td>
+                            <td><span style="font-weight: 800; color: var(--color-danger);">${item.suspicion}</span></td>
+                            <td>${item.lastInspection}</td>
+                            <td>${item.alertType === 'critica' ? 'Urgente / Lavado' : 'Bajo control'}</td>
+                            <td>
+                                <button class="btn btn-danger" style="font-size: 0.7rem; padding: 4px 8px; background: var(--color-danger); border: none;" onclick="deleteSigmaItem('negocios', '${item.ref}')">
+                                    <i class="fa-solid fa-trash"></i> Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="7" style="text-align: center; color: var(--color-muted); padding: 20px;">No hay negocios bajo investigación.</td></tr>';
+                }
+            } else if (activeSigmaSubTab === 'secretos') {
+                const list = document.getElementById('sigma-secretos-list');
+                if (list) {
+                    list.innerHTML = SECRET_PROJECTS.map(item => `
+                        <div class="card" style="border-left: 5px solid var(--color-danger); padding: 15px; background: rgba(0,0,0,0.015); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
+                            <div>
+                                <h6 style="margin: 0 0 4px 0; font-weight: 800; color: var(--color-danger); font-size: 0.9rem;">${item.code} (${item.clearance})</h6>
+                                <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--color-muted); font-weight: bold; letter-spacing: 0.5px;">CÓDIGO: ${item.id}</span>
+                                <p style="margin: 8px 0 0 0; font-size: 0.85rem; line-height: 1.4; color: #444;">${item.desc}</p>
+                            </div>
+                            <button class="btn btn-danger" style="font-size: 0.7rem; padding: 4px 8px; flex-shrink: 0; background: var(--color-danger); border: none;" onclick="deleteSigmaItem('secretos', '${item.code}')">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    `).join('') || '<div style="text-align: center; padding: 30px; color: var(--color-muted);">No hay proyectos secretos archivados.</div>';
+                }
+            }
+        }
+
+        async function addSigmaItem(event, category) {
+            event.preventDefault();
+            if (category === 'blindados') {
+                const newItem = {
+                    id: document.getElementById('sigma-blindado-id').value.trim(),
+                    route: document.getElementById('sigma-blindado-route').value.trim(),
+                    eta: document.getElementById('sigma-blindado-eta').value.trim(),
+                    cash: document.getElementById('sigma-blindado-cash').value.trim(),
+                    escort: document.getElementById('sigma-blindado-escort').value.trim(),
+                    status: document.getElementById('sigma-blindado-status').value
+                };
+                ARMORED_ROUTES.push(newItem);
+                await saveSigmaConfig('classified_armored_routes', ARMORED_ROUTES);
+                document.getElementById('sigma-blindado-id').value = '';
+                document.getElementById('sigma-blindado-route').value = '';
+                document.getElementById('sigma-blindado-eta').value = '';
+                document.getElementById('sigma-blindado-cash').value = '';
+                document.getElementById('sigma-blindado-escort').value = '';
+            } else if (category === 'nomina') {
+                const newItem = {
+                    badge: document.getElementById('sigma-police-badge').value.trim(),
+                    name: document.getElementById('sigma-police-name').value.trim(),
+                    rank: document.getElementById('sigma-police-rank').value.trim(),
+                    dept: document.getElementById('sigma-police-dept').value.trim(),
+                    salary: document.getElementById('sigma-police-salary').value.trim(),
+                    status: document.getElementById('sigma-police-status').value
+                };
+                POLICE_PAYROLL.push(newItem);
+                await saveSigmaConfig('classified_police_payroll', POLICE_PAYROLL);
+                document.getElementById('sigma-police-badge').value = '';
+                document.getElementById('sigma-police-name').value = '';
+                document.getElementById('sigma-police-rank').value = '';
+                document.getElementById('sigma-police-dept').value = '';
+                document.getElementById('sigma-police-salary').value = '';
+            } else if (category === 'negocios') {
+                const spec = document.getElementById('sigma-biz-vigilance').value;
+                const newItem = {
+                    ref: document.getElementById('sigma-biz-id').value.trim(),
+                    name: document.getElementById('sigma-biz-name').value.trim(),
+                    owner: document.getElementById('sigma-biz-owner').value.trim(),
+                    suspicion: spec,
+                    lastInspection: document.getElementById('sigma-biz-inspection').value.trim(),
+                    alertType: (spec === 'Crítico' || spec === 'Alto') ? 'critica' : 'baja'
+                };
+                INVESTIGATED_BUSINESSES.push(newItem);
+                await saveSigmaConfig('classified_investigated_businesses', INVESTIGATED_BUSINESSES);
+                document.getElementById('sigma-biz-id').value = '';
+                document.getElementById('sigma-biz-name').value = '';
+                document.getElementById('sigma-biz-owner').value = '';
+                document.getElementById('sigma-biz-inspection').value = '';
+                document.getElementById('sigma-biz-alert').value = '';
+            } else if (category === 'secretos') {
+                const clearanceVal = document.getElementById('sigma-proj-access').value.trim();
+                const newItem = {
+                    id: document.getElementById('sigma-proj-cat').value.trim(),
+                    code: document.getElementById('sigma-proj-title').value.trim(),
+                    clearance: clearanceVal,
+                    desc: document.getElementById('sigma-proj-desc').value.trim(),
+                    critical: clearanceVal.toLowerCase().includes('crítico') || clearanceVal.toLowerCase().includes('nivel 5')
+                };
+                SECRET_PROJECTS.push(newItem);
+                await saveSigmaConfig('classified_secret_projects', SECRET_PROJECTS);
+                document.getElementById('sigma-proj-title').value = '';
+                document.getElementById('sigma-proj-cat').value = '';
+                document.getElementById('sigma-proj-access').value = '';
+                document.getElementById('sigma-proj-desc').value = '';
+            }
+            renderSigmaManagementList();
+            showToast("Registro Guardado", "La información cifrada se guardó en el servidor.", "success");
+        }
+
+        async function deleteSigmaItem(category, identifier) {
+            if (category === 'blindados') {
+                ARMORED_ROUTES = ARMORED_ROUTES.filter(item => item.id !== identifier);
+                await saveSigmaConfig('classified_armored_routes', ARMORED_ROUTES);
+            } else if (category === 'nomina') {
+                POLICE_PAYROLL = POLICE_PAYROLL.filter(item => item.badge !== identifier);
+                await saveSigmaConfig('classified_police_payroll', POLICE_PAYROLL);
+            } else if (category === 'negocios') {
+                INVESTIGATED_BUSINESSES = INVESTIGATED_BUSINESSES.filter(item => item.ref !== identifier);
+                await saveSigmaConfig('classified_investigated_businesses', INVESTIGATED_BUSINESSES);
+            } else if (category === 'secretos') {
+                SECRET_PROJECTS = SECRET_PROJECTS.filter(item => item.code !== identifier);
+                await saveSigmaConfig('classified_secret_projects', SECRET_PROJECTS);
+            }
+            renderSigmaManagementList();
+            showToast("Registro Eliminado", "Se removió la información del servidor.", "warning");
+        }
+
+        async function saveSigmaConfig(key, valueArray) {
+            if (!SERVER_CONNECTED) return;
+            try {
+                await fetch(`${SERVER_URL}/api/config/${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(valueArray)
+                });
+            } catch (e) {
+                console.error(`Error saving config for ${key}:`, e);
             }
         }
 

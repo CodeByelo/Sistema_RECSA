@@ -417,6 +417,36 @@ app.post('/api/landing-config', async (req, res) => {
   }
 });
 
+// Generic Config API (SIGMA-7 classified data management)
+app.get('/api/config/:key', async (req, res) => {
+  const { key } = req.params;
+  try {
+    const result = await pool.query("SELECT value FROM recsa_config WHERE key = $1", [key]);
+    if (result.rows.length > 0) {
+      res.json(result.rows[0].value);
+    } else {
+      res.json(null);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/config/:key', async (req, res) => {
+  const { key } = req.params;
+  const config = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO recsa_config (key, value)
+      VALUES ($1, $2)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `, [key, JSON.stringify(config)]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // API Status
 app.get('/api/status', async (req, res) => {
   try {
