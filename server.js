@@ -5,7 +5,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const APP_VERSION = 'v4.2_vector_icons';
+const APP_VERSION = 'v4.3_premium_design';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
