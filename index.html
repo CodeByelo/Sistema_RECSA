@@ -2425,65 +2425,32 @@
                 const resCitizens = await fetch(`${SERVER_URL}/api/citizens`);
                 if (resCitizens.ok) {
                     const val = await resCitizens.json();
-                    if (val && val.length > 0) {
-                        CITIZENS = val;
-                        originalSetItem('recsa_citizens_data', JSON.stringify(val));
-                    } else {
-                        // Seed
-                        await fetch(`${SERVER_URL}/api/citizens/sync`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(CITIZENS)
-                        });
-                    }
+                    CITIZENS = val || [];
+                    originalSetItem('recsa_citizens_data', JSON.stringify(CITIZENS));
                 }
 
                 // 2. News
                 const resNews = await fetch(`${SERVER_URL}/api/news`);
                 if (resNews.ok) {
                     const val = await resNews.json();
-                    if (val && val.length > 0) {
-                        NEWS_DATA = val;
-                        originalSetItem('recsa_news_data', JSON.stringify(val));
-                    } else {
-                        await fetch(`${SERVER_URL}/api/news/sync`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(NEWS_DATA)
-                        });
-                    }
+                    NEWS_DATA = val || [];
+                    originalSetItem('recsa_news_data', JSON.stringify(NEWS_DATA));
                 }
 
                 // 3. Criminal Records
                 const resRecords = await fetch(`${SERVER_URL}/api/criminal-records`);
                 if (resRecords.ok) {
                     const val = await resRecords.json();
-                    if (val && val.length > 0) {
-                        CRIMINAL_RECORDS = val;
-                        originalSetItem('recsa_criminal_records', JSON.stringify(val));
-                    } else {
-                        await fetch(`${SERVER_URL}/api/criminal-records/sync`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(CRIMINAL_RECORDS)
-                        });
-                    }
+                    CRIMINAL_RECORDS = val || [];
+                    originalSetItem('recsa_criminal_records', JSON.stringify(CRIMINAL_RECORDS));
                 }
 
                 // 4. Loan Requests
                 const resLoans = await fetch(`${SERVER_URL}/api/loans`);
                 if (resLoans.ok) {
                     const val = await resLoans.json();
-                    if (val && val.length > 0) {
-                        LOAN_REQUESTS = val;
-                        originalSetItem('recsa_loan_requests', JSON.stringify(val));
-                    } else {
-                        await fetch(`${SERVER_URL}/api/loans/sync`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(LOAN_REQUESTS)
-                        });
-                    }
+                    LOAN_REQUESTS = val || [];
+                    originalSetItem('recsa_loan_requests', JSON.stringify(LOAN_REQUESTS));
                 }
 
                 // 5. Landing Config
