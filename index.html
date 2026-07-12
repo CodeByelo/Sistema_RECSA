@@ -4382,16 +4382,17 @@
                 }
                 
                 const isPolice = role.includes('lspd') || role.includes('lssd') || role.includes('sheriff') || role.includes('comandante');
-                const isCampaignAdmin = role.includes('inspector') || role.includes('admin') || user === 'funcionario';
-                const isAuditorOrGov = role.includes('inspector') || role.includes('auditor') || role.includes('admin') || user === 'funcionario' || user === 'banco_maz';
+                const isCampaignAdmin = role.includes('inspector') || role.includes('admin') || user === 'funcionario' || user === 'gobernadorh';
+                const isAuditorOrGov = role.includes('inspector') || role.includes('auditor') || role.includes('admin') || user === 'funcionario' || user === 'banco_maz' || user === 'gobernadorh';
+                const isAdmin = role.includes('admin') || user === 'gobernadorh';
                 
-                if (isPolice) {
+                if (isPolice || isAdmin) {
                     btnPolice.style.display = 'inline-flex';
                 }
-                if (isCampaignAdmin) {
+                if (isCampaignAdmin || isAdmin) {
                     btnLanding.style.display = 'inline-flex';
                 }
-                if (isAuditorOrGov) {
+                if (isAuditorOrGov || isAdmin) {
                     btnLoans.style.display = 'inline-flex';
                 }
             }
