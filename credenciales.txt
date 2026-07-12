@@ -1,65 +1,64 @@
 ========================================================================
-     SISTEMA RECSA - LISTADO OFICIAL DE CREDENCIALES DE ACCESO
+     SISTEMA RECSA v4.0 - LISTADO OFICIAL DE CREDENCIALES DE ACCESO
 ========================================================================
 
-A continuación se detallan los usuarios, contraseñas (firmas cifradas)
-y roles asignados en el Sistema de Solvencia Ciudadana (SSC), el MDC
-policial y la red clasificada SIGMA-7.
+Este archivo detalla las credenciales de acceso iniciales y el esquema de
+roles configurado en la base de datos de producción (Supabase) para la 
+intranet gubernamental y la red cifrada SIGMA-7.
 
 ------------------------------------------------------------------------
-1. ACCESO PÚBLICO / CIVIL
+1. CUENTA SUPREMA DE GOBERNADOR (ADMINISTRADOR)
 ------------------------------------------------------------------------
-Nombre: Esteban Russo
-Usuario: civil
-Contraseña: 1234
-Rol/Permisos: Acceso básico de consulta a solvencia ciudadana.
+Nombre: Gobernador Harrison
+Usuario: GobernadorH
+Contraseña: Harrison1910**
+Rol/Permisos: Gobernador. Acceso absoluto a todos los paneles:
+              - SSC: Padrón Ciudadano (ver, editar, eliminar)
+              - Solvencia: Reportes y estadísticas
+              - MDC Policial: Búsqueda criminal y antecedentes
+              - Órdenes Judiciales: Aprobación/Rechazo de allanamientos
+              - Créditos y Préstamos: Auditoría y aprobación
+              - Portal Público: Editor de contenido y noticias
+              - Gestión de Usuarios: Panel de creación/eliminación de accesos
+              - Red SIGMA-7: Carga y borrado de secretos de estado
 
 ------------------------------------------------------------------------
-2. INSPECCIÓN FISCAL / ADMINISTRACIÓN DE CAMPAÑA
-------------------------------------------------------------------------
-Nombre: Dra. Valeria Miller
-Usuario: funcionario
-Contraseña: gov2024
-Rol/Permisos: Inspector Fiscal RECSA. Acceso a consulta de solvencia
-              y panel de administración para modificar noticias, héroe
-              y propuestas de la Landing Page.
-
-------------------------------------------------------------------------
-3. AUDITORÍA BANCARIA (FLEECA BANK)
-------------------------------------------------------------------------
-Nombre: Marcus Sterling
-Usuario: banco_maz
-Contraseña: bank999
-Rol/Permisos: Auditor Fleeca Bank. Acceso a consulta de solvencia y
-              aprobación/registro de préstamos cívicos.
-
-------------------------------------------------------------------------
-4. ADMINISTRACIÓN DE SEGURIDAD (SHERIFF DEPARTMENT)
-------------------------------------------------------------------------
-Nombre: Sheriff A. Rodriguez
-Usuario: admin_lssd
-Contraseña: alpha123
-Rol/Permisos: Sheriff Department Admin. Acceso a consulta de solvencia,
-              panel de base de datos criminal policial (MDC) para
-              búsqueda y emisión de arrestos/multas.
-
-------------------------------------------------------------------------
-5. COMANDANCIA POLICIAL (LSPD)
-------------------------------------------------------------------------
-Nombre: Cmte. Ricardo Santos
-Usuario: cmte_santos
-Contraseña: lspd#2024
-Rol/Permisos: Comandante General LSPD. Acceso a consulta de solvencia
-              y base de datos criminal policial (MDC) para registro de
-              infracciones y arrestos.
-
-------------------------------------------------------------------------
-6. ACCESO CLASIFICADO (BACKDOOR / TERMINAL DE INTELIGENCIA)
+2. ACCESO CLASIFICADO (BACKDOOR / TERMINAL DE INTELIGENCIA)
 ------------------------------------------------------------------------
 Nombre: Ghost Protocol
 Usuario: backdoor
 Contraseña: classified
-Rol/Permisos: Infiltrado Rebelde. Acceso a la terminal SIGMA-7 para
-              consultar nóminas de oficiales, horarios de blindados
-              Gruppe 6, lavado de dinero y proyectos secretos del FIB.
+Rol/Permisos: Terminal Hackeada. Acceso directo a la terminal SIGMA-7
+              para visualizar la base de datos ilegal y clasificada:
+              - Rutas de camiones blindados Gruppe 6
+              - Nómina de salarios y oficiales del estado
+              - Negocios investigados por lavado de dinero
+              - Proyectos de inteligencia militar/FIB
+
+------------------------------------------------------------------------
+3. CREACIÓN DE NUEVAS CUENTAS (INTRANET)
+========================================================================
+Desde el panel "Gestión de Usuarios" (exclusivo para GobernadorH), puedes
+crear y revocar cuentas para los miembros de tu facción con los siguientes
+roles específicos:
+
+• LSPD:
+  - Acceso al MDC Policial (historial criminal y registro de antecedentes).
+  - Herramienta para solicitar Órdenes Judiciales de cateo y allanamiento.
+
+• LSSD:
+  - Mismo acceso policial para la división del Sheriff del Condado.
+
+• Juez:
+  - Panel de Órdenes Judiciales (cola de aprobación/rechazo de solicitudes).
+
+• Inspector Fiscal:
+  - Permisos de edición en el Padrón Ciudadano.
+  - Gestión de tasas de interés y administración del Portal Público.
+
+• Banco RECSA:
+  - Panel de Créditos y Préstamos (aprobación/rechazo de solicitudes).
+
+• Civil:
+  - Acceso básico al Portal Ciudadano.
 ------------------------------------------------------------------------
