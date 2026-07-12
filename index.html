@@ -2565,37 +2565,11 @@
         
         // Usuarios autorizados
         const USERS = [
-            { id: 1, user: "civil", pass: "1234", role: "civil", name: "Esteban Russo", citizenId: 118 },
-            { id: 2, user: "funcionario", pass: "gov2024", role: "Inspector Fiscal RECSA", name: "Dra. Valeria Miller" },
-            { id: 3, user: "banco_maz", pass: "bank999", role: "Auditor Fleeca Bank", name: "Marcus Sterling" },
-            
-            // ACCESO BACKDOOR CLASIFICADA (ADMIN / INTELIGENCIA)
-            { id: 90, user: "admin_lssd", pass: "alpha123", role: "Sheriff Department Admin", name: "Sheriff A. Rodriguez" },
-            { id: 91, user: "cmte_santos", pass: "lspd#2024", role: "Comandante General LSPD", name: "Cmte. Ricardo Santos" },
-            { id: 92, user: "backdoor", pass: "classified", role: "Infiltrado Rebelde", name: "Ghost Protocol" }
+            { id: 1, user: "GobernadorH", pass: "Harrison1910**", role: "Inspector Fiscal RECSA", name: "Gobernador Harrison", citizenId: null }
         ];
 
         // Base de Datos de Ciudadanos del Estado (Sistema de Solvencia Ciudadana - SSC)
-        const DEFAULT_CITIZENS = [
-            { id: 101, name: "Franklin Clinton", veraz: "Verde", job: "Mecánico Autotuning", phone: "555-0101", bank: "$120,400", fines: 0, loanLimit: 50000, policeStatus: "Limpio", nu: "A-101", birthdate: "12/03/1988", gender: "Masculino", height: "183", eyes: "Pardos", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "https://i.imgur.com/8Qe5g6g.png" },
-            { id: 102, name: "Michael De Santa", veraz: "Verde", job: "Productor de Cine", phone: "555-0102", bank: "$2,450,000", fines: 0, loanLimit: 500000, policeStatus: "Limpio", nu: "A-102", birthdate: "09/07/1968", gender: "Masculino", height: "188", eyes: "Azules", weaponLicense: "SÍ W-102", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 103, name: "Trevor Philips", veraz: "Rojo", job: "CEO de Industrias T.P.", phone: "555-0103", bank: "-$14,500", fines: 154000, loanLimit: 0, policeStatus: "Buscado", nu: "A-103", birthdate: "14/11/1967", gender: "Masculino", height: "186", eyes: "Pardos", weaponLicense: "SÍ W-103", driverLicense: "NO", avatar: "" },
-            { id: 104, name: "Lamar Davis", veraz: "Rojo", job: "Repartidor Premium", phone: "555-0104", bank: "$350", fines: 12500, loanLimit: 0, policeStatus: "Limpio", nu: "A-104", birthdate: "20/06/1987", gender: "Masculino", height: "201", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (8/12)", avatar: "" },
-            { id: 105, name: "Lester Crest", veraz: "Verde", job: "Consultor TI", phone: "555-0105", bank: "$5,600,000", fines: 0, loanLimit: 1000000, policeStatus: "Limpio", nu: "A-105", birthdate: "11/02/1972", gender: "Masculino", height: "172", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 106, name: "Jimmy De Santa", veraz: "Rojo", job: "Desempleado / Gamer", phone: "555-0106", bank: "-$1,200", fines: 3200, loanLimit: 0, policeStatus: "Limpio", nu: "A-106", birthdate: "02/09/1991", gender: "Masculino", height: "175", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (10/12)", avatar: "" },
-            { id: 107, name: "Dave Norton", veraz: "Verde", job: "Funcionario Federal FIB", phone: "555-0107", bank: "$310,000", fines: 0, loanLimit: 150000, policeStatus: "Limpio", nu: "A-107", birthdate: "23/04/1965", gender: "Masculino", height: "182", eyes: "Verdes", weaponLicense: "SÍ W-107", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 108, name: "Amanda De Santa", veraz: "Verde", job: "Instructora de Yoga", phone: "555-0108", bank: "$68,000", fines: 0, loanLimit: 20000, policeStatus: "Limpio", nu: "A-108", birthdate: "04/10/1970", gender: "Femenino", height: "170", eyes: "Azules", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 109, name: "Wade Hebert", veraz: "Rojo", job: "Vagabundo", phone: "555-0109", bank: "$4", fines: 950, loanLimit: 0, policeStatus: "Limpio", nu: "A-109", birthdate: "15/08/1986", gender: "Masculino", height: "178", eyes: "Pardos", weaponLicense: "NO", driverLicense: "NO", avatar: "" },
-            { id: 110, name: "Steve Haines", veraz: "Verde", job: "Agente Especial FIB", phone: "555-0110", bank: "$890,000", fines: 0, loanLimit: 300000, policeStatus: "Limpio", nu: "A-110", birthdate: "30/12/1969", gender: "Masculino", height: "185", eyes: "Azules", weaponLicense: "SÍ W-110", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 111, name: "Martin Madrazo", veraz: "Rojo", job: "Empresario Agrícola", phone: "555-0111", bank: "$12,400,000", fines: 480000, loanLimit: 0, policeStatus: "Bajo Investigación", nu: "A-111", birthdate: "25/05/1959", gender: "Masculino", height: "178", eyes: "Marrón", weaponLicense: "SÍ W-111", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 112, name: "Devin Weston", veraz: "Verde", job: "Inversor Capital de Riesgo", phone: "555-0112", bank: "$48,900,000", fines: 0, loanLimit: 5000000, policeStatus: "Limpio", nu: "A-112", birthdate: "14/03/1962", gender: "Masculino", height: "189", eyes: "Pardos", weaponLicense: "SÍ W-112", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 113, name: "Patricia Madrazo", veraz: "Verde", job: "Ama de Casa", phone: "555-0113", bank: "$45,000", fines: 0, loanLimit: 10000, policeStatus: "Limpio", nu: "A-113", birthdate: "08/01/1962", gender: "Femenino", height: "168", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 114, name: "Ron Jakowski", veraz: "Rojo", job: "Locutor de Radio Conspiración", phone: "555-0114", bank: "-$540", fines: 4100, loanLimit: 0, policeStatus: "Limpio", nu: "A-114", birthdate: "18/09/1971", gender: "Masculino", height: "180", eyes: "Azules", weaponLicense: "NO", driverLicense: "SÍ (6/12)", avatar: "" },
-            { id: 115, name: "Tanisha Jackson", veraz: "Verde", job: "Enfermera", phone: "555-0115", bank: "$28,000", fines: 0, loanLimit: 15000, policeStatus: "Limpio", nu: "A-115", birthdate: "17/11/1988", gender: "Femenino", height: "173", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 116, name: "Cheng Jr", veraz: "Rojo", job: "Heredero de Triada", phone: "555-0116", bank: "$8,500,000", fines: 98000, loanLimit: 0, policeStatus: "Limpio", nu: "A-116", birthdate: "05/05/1990", gender: "Masculino", height: "170", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "" },
-            { id: 117, name: "Simeon Yetarian", veraz: "Rojo", job: "Concesionario Autos Premium", phone: "555-0117", bank: "$43,000", fines: 67000, loanLimit: 0, policeStatus: "Limpio", nu: "A-117", birthdate: "22/10/1960", gender: "Masculino", height: "175", eyes: "Marrón", weaponLicense: "NO", driverLicense: "SÍ (8/12)", avatar: "" },
-            { id: 118, name: "Esteban Russo", veraz: "Verde", job: "Distribuidor Logístico", phone: "555-0118", bank: "$42,500", fines: 0, loanLimit: 25000, policeStatus: "Limpio", nu: "A-118", birthdate: "14/08/1995", gender: "Masculino", height: "180", eyes: "Marrones", weaponLicense: "NO", driverLicense: "SÍ (12/12)", avatar: "", businesses: [ { name: "Russo Logistic Solutions", status: "Activo", earnings: 12000 } ], payments: [] }
-        ];
+        const DEFAULT_CITIZENS = [];
 
         // Control de versión de datos — incrementar cuando haya cambios estructurales
         const DATA_VERSION = "v2.1";
@@ -2668,32 +2642,7 @@
         let landingConfig = JSON.parse(localStorage.getItem('recsa_landing_config')) || DEFAULT_LANDING_CONFIG;
 
         // Noticias sobre RECSA y Dylan Harrison (Default)
-        const DEFAULT_NEWS_DATA = [
-            {
-                id: 1,
-                date: "12 de Julio, 2026",
-                headline: "Impresionante apoyo a Dylan Harrison en Verdant Bluffs",
-                excerpt: "Con una asistencia masiva de ciudadanos del sur del estado, el partido RECSA dio inicio a la gran gira de discursos políticos en Verdant Bluffs.",
-                tag: "Campaña",
-                img: "./assets/campana_discurso.png"
-            },
-            {
-                id: 2,
-                date: "09 de Julio, 2026",
-                headline: "RECSA anuncia el Nuevo Plan de Vivienda Justa",
-                excerpt: "A través del Sistema de Solvencia Ciudadana (SSC), los inspectores autorizarán bonos directos a tasas del 5% a familias cívicas solventes.",
-                tag: "Economía",
-                img: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=600&q=80"
-            },
-            {
-                id: 3,
-                date: "06 de Julio, 2026",
-                headline: "LSPD redobla la vigilancia para proteger mítines políticos",
-                excerpt: "El Jefe de Policía instruyó patrullajes adicionales para garantizar la seguridad de los discursos de Dylan Harrison en todo el condado.",
-                tag: "Seguridad",
-                img: "https://images.unsplash.com/photo-1513828760920-ec0a5bbb20a2?auto=format&fit=crop&w=600&q=80"
-            }
-        ];
+        const DEFAULT_NEWS_DATA = [];
 
         // Cargar noticias de la Landing Page
         let NEWS_DATA = JSON.parse(localStorage.getItem('recsa_news_data')) || DEFAULT_NEWS_DATA;
@@ -4432,78 +4381,12 @@
            ========================================================================== */
 
         // Historiales delictivos por defecto
-        const DEFAULT_CRIMINAL_RECORDS = [
-            {
-                id: 1,
-                citizenId: 103, // Trevor Philips
-                crime: "Tráfico de armas Paleto Bay",
-                fine: 100000,
-                jail: 120,
-                officer: "Jefe Andrew McTavish",
-                status: "Prófugo",
-                date: "10 de Junio, 2026",
-                notes: "Incautado camión con rifles de asalto y explosivos en la salida de Paleto. El sospechoso huyó saltando al tren."
-            },
-            {
-                id: 2,
-                citizenId: 103, // Trevor Philips
-                crime: "Asalto a blindado Gruppe 6",
-                fine: 54000,
-                jail: 60,
-                officer: "Capitán Samuel Sterling",
-                status: "Prófugo",
-                date: "28 de Junio, 2026",
-                notes: "Asalto con explosivos plásticos en autopista norte. Se sustrajeron sacos de dinero."
-            },
-            {
-                id: 3,
-                citizenId: 111, // Martin Madrazo
-                crime: "Lavado de dinero",
-                fine: 480000,
-                jail: 0,
-                officer: "Teniente Donald O'Conner",
-                status: "Fianza Pagada",
-                date: "05 de Julio, 2026",
-                notes: "Investigación contable en Tequi-la-la Bar. El sospechoso depositó fianza judicial para evitar retención policial preventiva."
-            },
-            {
-                id: 4,
-                citizenId: 106, // Jimmy De Santa
-                crime: "Alteración del orden público",
-                fine: 3200,
-                jail: 1,
-                officer: "Agente Ronald Briggs",
-                status: "Cumplido",
-                date: "02 de Julio, 2026",
-                notes: "El infractor arrojó bandejas de comida y vociferó insultos a empleados del Burger Shot en Vespucci."
-            }
-        ];
+        const DEFAULT_CRIMINAL_RECORDS = [];
 
         let CRIMINAL_RECORDS = JSON.parse(localStorage.getItem('recsa_criminal_records')) || DEFAULT_CRIMINAL_RECORDS;
 
         // Cola de Solicitudes de Préstamo por defecto
-        const DEFAULT_LOAN_REQUESTS = [
-            {
-                id: 1,
-                citizenId: 104,
-                citizenName: "Lamar Davis",
-                amount: 5000,
-                months: 12,
-                interest: 0.08,
-                status: "Rechazado",
-                date: "08/07/2026"
-            },
-            {
-                id: 2,
-                citizenId: 106,
-                citizenName: "Jimmy De Santa",
-                amount: 2500,
-                months: 6,
-                interest: 0.05,
-                status: "Pendiente",
-                date: "11/07/2026"
-            }
-        ];
+        const DEFAULT_LOAN_REQUESTS = [];
 
         let LOAN_REQUESTS = JSON.parse(localStorage.getItem('recsa_loan_requests')) || DEFAULT_LOAN_REQUESTS;
 
