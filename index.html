@@ -2539,15 +2539,13 @@
         const DEFAULT_CITIZENS = [];
 
         // Control de versión de datos — incrementar cuando haya cambios estructurales
-        const DATA_VERSION = "v2.1";
+        const DATA_VERSION = "v3.0_governor_release";
         const storedVersion = localStorage.getItem('recsa_data_version');
         if (storedVersion !== DATA_VERSION) {
-            // Limpiar datos obsoletos de versiones anteriores
-            localStorage.removeItem('recsa_citizens_data');
-            localStorage.removeItem('recsa_loan_requests');
-            localStorage.removeItem('recsa_news_data');
-            localStorage.removeItem('recsa_criminal_records');
+            // Limpiar datos obsoletos de versiones anteriores y forzar recarga limpia
+            localStorage.clear();
             localStorage.setItem('recsa_data_version', DATA_VERSION);
+            window.location.reload();
         }
 
         let CITIZENS = JSON.parse(localStorage.getItem('recsa_citizens_data')) || DEFAULT_CITIZENS;
