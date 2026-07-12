@@ -947,7 +947,7 @@
                 <div class="sidebar-section-label">Ciudadanos</div>
                 <button class="sidebar-btn active" id="sb-ssc" onclick="switchTab('ssc')">
                     <span class="sb-icon"><i class="fa-solid fa-address-book"></i></span>
-                    <span>Padrón Ciudadano (SSC)</span>
+                    <span>Consultar Ciudadanos (SSC)</span>
                 </button>
                 <button class="sidebar-btn" id="sb-solvency" onclick="switchTab('solvency')">
                     <span class="sb-icon"><i class="fa-solid fa-chart-pie"></i></span>
@@ -993,7 +993,7 @@
                 <!-- TAB: SSC — PADRÓN CIUDADANO -->
                 <div id="tab-ssc" class="tab-content active">
                     <div class="page-header">
-                        <h2><i class="fa-solid fa-address-book" style="color:var(--gov-blue);"></i> Padrón Ciudadano SSC</h2>
+                        <h2><i class="fa-solid fa-address-book" style="color:var(--gov-blue);"></i> Consultar Ciudadanos (SSC)</h2>
                         <p>Sistema de Solvencia Ciudadana — Registro completo de la población de San Andreas</p>
                     </div>
                     <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
@@ -1430,7 +1430,7 @@
     // ============================================================
     // CONSTANTS & STATE
     // ============================================================
-    const APP_VERSION = 'v4.1_full_system';
+    const APP_VERSION = 'v4.2_vector_icons';
     const SERVER_URL = window.location.origin.includes('file://') ? 'http://localhost:3000' : window.location.origin;
     const INTEREST_RATE = 0.08;
 
@@ -1814,12 +1814,12 @@
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;">
-                <div class="stat-card"><div class="icon">🏠</div><div class="num">${(c.address || '—')}</div><div class="label">Dirección</div></div>
-                <div class="stat-card"><div class="icon">💼</div><div class="num">${c.bank || '—'}</div><div class="label">Saldo Bancario</div></div>
-                <div class="stat-card"><div class="icon">⚖️</div><div class="num" style="color:${c.fines > 0 ? 'var(--status-red)' : 'var(--status-green)'}">$${Number(c.fines||0).toLocaleString()}</div><div class="label">Multas Pendientes</div></div>
-                <div class="stat-card"><div class="icon">🚗</div><div class="num" style="font-size:0.85rem;">${c.driverLicense || 'NO'}</div><div class="label">Lic. Conducir</div></div>
-                <div class="stat-card"><div class="icon">🔫</div><div class="num" style="font-size:0.85rem;">${c.weaponLicense || 'NO'}</div><div class="label">Lic. Armas</div></div>
-                <div class="stat-card"><div class="icon">🏪</div><div class="num" style="font-size:0.85rem;">${c.commercialLicense || 'NO'}</div><div class="label">Lic. Comercial</div></div>
+                <div class="stat-card"><div class="icon"><i class="fa-solid fa-house" style="color:var(--gov-blue-mid);"></i></div><div class="num">${(c.address || '—')}</div><div class="label">Dirección</div></div>
+                <div class="stat-card"><div class="icon"><i class="fa-solid fa-briefcase" style="color:var(--gov-blue-mid);"></i></div><div class="num">${c.bank || '—'}</div><div class="label">Saldo Bancario</div></div>
+                <div class="stat-card"><div class="icon"><i class="fa-solid fa-scale-balanced" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="color:${c.fines > 0 ? 'var(--status-red)' : 'var(--status-green)'}">$${Number(c.fines||0).toLocaleString()}</div><div class="label">Multas Pendientes</div></div>
+                <div class="stat-card"><div class="icon"><i class="fa-solid fa-car" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="font-size:0.85rem;">${c.driverLicense || 'NO'}</div><div class="label">Lic. Conducir</div></div>
+                <div class="stat-card"><div class="icon"><i class="fa-solid fa-gun" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="font-size:0.85rem;">${c.weaponLicense || 'NO'}</div><div class="label">Lic. Armas</div></div>
+                <div class="stat-card"><div class="icon"><i class="fa-solid fa-store" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="font-size:0.85rem;">${c.commercialLicense || 'NO'}</div><div class="label">Lic. Comercial</div></div>
             </div>
             ${canSeeMDC() ? `
             <h4 style="margin-bottom:12px;color:var(--gov-navy);font-weight:800;">Historial Criminal (${crimes.length} registro${crimes.length !== 1?'s':''})</h4>
@@ -1964,10 +1964,10 @@
         const orange = CITIZENS.filter(c => c.veraz === 'Naranja').length;
         const red = CITIZENS.filter(c => c.veraz === 'Rojo').length;
         document.getElementById('solvency-stats').innerHTML = `
-            <div class="stat-card"><div class="icon" style="color:var(--status-green);">●</div><div class="num" style="color:var(--status-green);">${green}</div><div class="label">Solventes (Verde)</div></div>
-            <div class="stat-card"><div class="icon" style="color:var(--status-orange);">●</div><div class="num" style="color:var(--status-orange);">${orange}</div><div class="label">En Seguimiento</div></div>
-            <div class="stat-card"><div class="icon" style="color:var(--status-red);">●</div><div class="num" style="color:var(--status-red);">${red}</div><div class="label">Morosos (Rojo)</div></div>
-            <div class="stat-card"><div class="icon">👥</div><div class="num">${CITIZENS.length}</div><div class="label">Total Registrados</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-circle" style="color:var(--status-green);"></i></div><div class="num" style="color:var(--status-green);">${green}</div><div class="label">Solventes (Verde)</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-circle" style="color:var(--status-orange);"></i></div><div class="num" style="color:var(--status-orange);">${orange}</div><div class="label">En Seguimiento</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-circle" style="color:var(--status-red);"></i></div><div class="num" style="color:var(--status-red);">${red}</div><div class="label">Morosos (Rojo)</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-users" style="color:var(--gov-blue-mid);"></i></div><div class="num">${CITIZENS.length}</div><div class="label">Total Registrados</div></div>
         `;
     }
 
@@ -2289,10 +2289,10 @@
         const rejected = LOANS.filter(l => l.status === 'Rechazado').length;
         const totalAmount = LOANS.filter(l => l.status === 'Aprobado').reduce((sum, l) => sum + l.amount, 0);
         document.getElementById('loans-stats').innerHTML = `
-            <div class="stat-card"><div class="icon" style="color:var(--status-orange);">⏳</div><div class="num">${pending}</div><div class="label">Pendientes</div></div>
-            <div class="stat-card"><div class="icon" style="color:var(--status-green);">✅</div><div class="num">${approved}</div><div class="label">Aprobados</div></div>
-            <div class="stat-card"><div class="icon" style="color:var(--status-red);">❌</div><div class="num">${rejected}</div><div class="label">Rechazados</div></div>
-            <div class="stat-card"><div class="icon">💰</div><div class="num" style="font-size:1rem;">$${totalAmount.toLocaleString()}</div><div class="label">Total Aprobado</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-hourglass-half" style="color:var(--status-orange);"></i></div><div class="num">${pending}</div><div class="label">Pendientes</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-circle-check" style="color:var(--status-green);"></i></div><div class="num">${approved}</div><div class="label">Aprobados</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-circle-xmark" style="color:var(--status-red);"></i></div><div class="num">${rejected}</div><div class="label">Rechazados</div></div>
+            <div class="stat-card"><div class="icon"><i class="fa-solid fa-money-bill-trend-up" style="color:var(--gov-gold);"></i></div><div class="num" style="font-size:1rem;">$${totalAmount.toLocaleString()}</div><div class="label">Total Aprobado</div></div>
         `;
     }
 
