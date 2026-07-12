@@ -4616,7 +4616,7 @@
             
             if (currentSessionUser) {
                 const role = currentSessionUser.role.toLowerCase();
-                const user = currentSessionUser.user.toLowerCase();
+                const user = (currentSessionUser.username || currentSessionUser.user || "").toLowerCase();
                 
                 if (role === 'civil') {
                     navBar.style.display = 'none';
