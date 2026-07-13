@@ -2355,7 +2355,8 @@
             const btnCancel = document.getElementById('confirm-modal-btn-cancel');
             const btnConfirm = document.getElementById('confirm-modal-btn-action');
 
-            titleEl.innerHTML = `<i class="${options.icon || 'fa-solid fa-circle-question'}" style="color: ${options.iconColor || 'var(--gov-gold)'}; margin-right: 8px;"></i>${title}`;
+            const defIconColor = (options.type === 'danger' || options.type === 'warning') ? '#fff' : 'var(--gov-gold)';
+            titleEl.innerHTML = `<i class="${options.icon || 'fa-solid fa-circle-question'}" style="color: ${options.iconColor || defIconColor}; margin-right: 8px;"></i>${title}`;
             msgEl.textContent = message;
             inputEl.style.display = 'none';
 
@@ -2411,7 +2412,8 @@
             const btnCancel = document.getElementById('confirm-modal-btn-cancel');
             const btnConfirm = document.getElementById('confirm-modal-btn-action');
 
-            titleEl.innerHTML = `<i class="${options.icon || 'fa-solid fa-circle-exclamation'}" style="color: ${options.iconColor || 'var(--gov-gold)'}; margin-right: 8px;"></i>${title}`;
+            const defIconColor = (options.type === 'danger' || options.type === 'warning') ? '#fff' : 'var(--gov-gold)';
+            titleEl.innerHTML = `<i class="${options.icon || 'fa-solid fa-circle-exclamation'}" style="color: ${options.iconColor || defIconColor}; margin-right: 8px;"></i>${title}`;
             msgEl.textContent = message;
             inputEl.style.display = 'none';
 
@@ -2443,7 +2445,7 @@
             const btnCancel = document.getElementById('confirm-modal-btn-cancel');
             const btnConfirm = document.getElementById('confirm-modal-btn-action');
 
-            titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: var(--gov-gold); margin-right: 8px;"></i>${title}`;
+            titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: #fff; margin-right: 8px;"></i>${title}`;
             msgEl.textContent = message;
 
             inputEl.value = '';
@@ -4952,7 +4954,7 @@
     }
 
     async function deleteCitizen(id) {
-        const hasConfirmed = await customConfirm('Eliminar Ciudadano', '¿Eliminar este ciudadano del sistema? Esta acción no se puede revertir.', { type: 'danger', icon: 'fa-solid fa-user-minus', iconColor: 'var(--status-red)' });
+        const hasConfirmed = await customConfirm('Eliminar Ciudadano', '¿Eliminar este ciudadano del sistema? Esta acción no se puede revertir.', { type: 'danger', icon: 'fa-solid fa-user-minus', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/citizens/${id}`, { method: 'DELETE' });
@@ -5317,7 +5319,7 @@
     }
 
     async function deleteCrime(id) {
-        const hasConfirmed = await customConfirm('Eliminar Antecedente', '¿Eliminar este antecedente?', { type: 'danger', icon: 'fa-solid fa-gavel', iconColor: 'var(--status-red)' });
+        const hasConfirmed = await customConfirm('Eliminar Antecedente', '¿Eliminar este antecedente?', { type: 'danger', icon: 'fa-solid fa-gavel', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/criminal-records/${id}`, { method: 'DELETE' });
@@ -5642,7 +5644,7 @@
     }
 
     async function deleteNews(id) {
-        const hasConfirmed = await customConfirm('Eliminar Noticia', '¿Eliminar esta noticia?', { type: 'danger', icon: 'fa-solid fa-trash-can', iconColor: 'var(--status-red)' });
+        const hasConfirmed = await customConfirm('Eliminar Noticia', '¿Eliminar esta noticia?', { type: 'danger', icon: 'fa-solid fa-trash-can', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/news/${id}`, { method: 'DELETE' });
@@ -5726,7 +5728,7 @@
     }
 
     async function deleteUser(id, name) {
-        const hasConfirmed = await customConfirm('Revocar Acceso', `¿Revocar acceso de "${name}"? Esta acción no se puede revertir.`, { type: 'danger', icon: 'fa-solid fa-user-slash', iconColor: 'var(--status-red)' });
+        const hasConfirmed = await customConfirm('Revocar Acceso', `¿Revocar acceso de "${name}"? Esta acción no se puede revertir.`, { type: 'danger', icon: 'fa-solid fa-user-slash', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/users/${id}`, { method: 'DELETE' });
@@ -5789,7 +5791,7 @@
         if (!name || name.trim() === '') return;
         const trimmed = name.trim();
         if (CLASSIFIED_PAYROLLS[trimmed]) {
-            await customAlert('Acción Inválida', 'Esta facción ya existe.', { icon: 'fa-solid fa-triangle-exclamation', iconColor: 'var(--status-red)' });
+            await customAlert('Acción Inválida', 'Esta facción ya existe.', { icon: 'fa-solid fa-triangle-exclamation', iconColor: '#fff' });
             return;
         }
         CLASSIFIED_PAYROLLS[trimmed] = [];
@@ -5804,7 +5806,7 @@
         if (!newName || newName.trim() === '' || newName.trim() === selectedFaction) return;
         const trimmed = newName.trim();
         if (CLASSIFIED_PAYROLLS[trimmed]) {
-            await customAlert('Acción Inválida', 'Esta facción ya existe.', { icon: 'fa-solid fa-triangle-exclamation', iconColor: 'var(--status-red)' });
+            await customAlert('Acción Inválida', 'Esta facción ya existe.', { icon: 'fa-solid fa-triangle-exclamation', iconColor: '#fff' });
             return;
         }
         CLASSIFIED_PAYROLLS[trimmed] = CLASSIFIED_PAYROLLS[selectedFaction];
@@ -5816,7 +5818,7 @@
     }
 
     async function deleteCurrentFaction() {
-        const hasConfirmed = await customConfirm('Eliminar Nómina', `¿Estás seguro de que deseas eliminar por completo la facción "${selectedFaction}" y todos sus miembros?`, { type: 'danger', icon: 'fa-solid fa-users-slash', iconColor: 'var(--status-red)' });
+        const hasConfirmed = await customConfirm('Eliminar Nómina', `¿Estás seguro de que deseas eliminar por completo la facción "${selectedFaction}" y todos sus miembros?`, { type: 'danger', icon: 'fa-solid fa-users-slash', iconColor: '#fff' });
         if (!hasConfirmed) return;
         delete CLASSIFIED_PAYROLLS[selectedFaction];
         const keys = Object.keys(CLASSIFIED_PAYROLLS);
@@ -6619,7 +6621,7 @@
     }
 
     async function deleteWitness(id) {
-        const hasConfirmed = await customConfirm('Eliminar Testigo', '¿Estás seguro de que deseas eliminar este testigo de la base de datos de protección?', { type: 'danger', icon: 'fa-solid fa-user-shield', iconColor: 'var(--status-red)' });
+        const hasConfirmed = await customConfirm('Eliminar Testigo', '¿Estás seguro de que deseas eliminar este testigo de la base de datos de protección?', { type: 'danger', icon: 'fa-solid fa-user-shield', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
             const res = await fetch(`${SERVER_URL}/api/witness-protection/${id}`, { method: 'DELETE' });
