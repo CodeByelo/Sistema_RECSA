@@ -882,7 +882,7 @@
 
 <!-- Modal: REGISTRAR CRIMEN -->
 <div id="modal-crime" class="modal-overlay">
-    <div class="modal-box" style="max-width: 540px;">
+    <div class="modal-box" style="max-width: 560px;">
         <div class="modal-header">
             <h3>Registrar Antecedente Criminal</h3>
             <button class="btn-modal-close" onclick="closeModal('modal-crime')"><i class="fa-solid fa-xmark"></i></button>
@@ -890,54 +890,38 @@
         <div class="modal-body">
             <div id="crime-citizen-info" style="background:var(--gov-off);border-radius:8px;padding:12px;margin-bottom:16px;font-weight:700;color:var(--gov-navy);"></div>
             <input type="hidden" id="crime-citizen-id">
-            <div class="form-group">
-                <label class="form-label">Cargo / Delito *</label>
-                <select id="crime-type" class="form-control">
-                    <option>-- Seleccionar delito --</option>
-                    <optgroup label="Delitos contra personas">
-                        <option>Agresión Simple</option>
-                        <option>Agresión con Arma</option>
-                        <option>Lesiones Graves</option>
-                        <option>Homicidio Culposo</option>
-                        <option>Homicidio Doloso</option>
-                        <option>Secuestro</option>
-                    </optgroup>
-                    <optgroup label="Delitos contra la propiedad">
-                        <option>Robo Simple</option>
-                        <option>Robo a Mano Armada</option>
-                        <option>Robo de Vehículo</option>
-                        <option>Robo a Establecimiento</option>
-                        <option>Daño a la Propiedad</option>
-                    </optgroup>
-                    <optgroup label="Drogas y armas">
-                        <option>Posesión de Drogas</option>
-                        <option>Tráfico de Drogas</option>
-                        <option>Portación Ilegal de Arma</option>
-                        <option>Tráfico de Armas</option>
-                    </optgroup>
-                    <optgroup label="Delitos gubernamentales">
-                        <option>Evasión Fiscal</option>
-                        <option>Lavado de Dinero</option>
-                        <option>Soborno a Funcionario</option>
-                        <option>Resistencia a la Autoridad</option>
-                        <option>Fuga de Prisión</option>
-                    </optgroup>
-                    <optgroup label="Tráfico">
-                        <option>Infracción de Tránsito</option>
-                        <option>Conducción Temeraria</option>
-                        <option>DUI — Conducción bajo Efectos</option>
-                        <option>Fuga de Control Policial</option>
-                    </optgroup>
-                </select>
+            
+            <div class="form-group" style="position:relative;">
+                <label class="form-label">Buscar Delito / Cargo del Código Penal *</label>
+                <input type="text" id="crime-search-input" class="form-control" placeholder="🔍 Escribe nombre o número de artículo (ej. Robo, Homicidio, 2101...)" oninput="filterPenalCodeCrimes()">
+                <div id="crime-search-results" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--gov-border); border-radius: 6px; margin-top: 8px; background: #070707; display: none; padding: 4px; z-index: 100;">
+                </div>
             </div>
+            
+            <!-- Delito seleccionado dinámicamente -->
+            <div class="form-group" id="selected-crime-container" style="display: none; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div style="flex:1;">
+                        <span id="selected-crime-badge" class="badge"></span>
+                        <h4 id="selected-crime-name" style="margin: 6px 0 4px 0; color: var(--gov-navy); font-weight: bold; font-size: 0.95rem;"></h4>
+                        <p id="selected-crime-desc" style="font-size: 0.72rem; color: var(--gov-muted); margin: 0; line-height: 1.4;"></p>
+                    </div>
+                    <button class="btn btn-ghost btn-xs" onclick="clearSelectedCrime()" style="color: var(--status-red); font-size: 0.7rem; padding: 4px 8px; border: 1px solid rgba(239, 68, 68, 0.2);"><i class="fa-solid fa-trash"></i> Quitar</button>
+                </div>
+            </div>
+            
+            <input type="hidden" id="crime-type" value="">
+            
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Multa ($)</label>
                     <input type="number" id="crime-fine" class="form-control" placeholder="0" value="0">
+                    <span style="font-size:0.68rem; color:var(--gov-muted);">Establecida por ley penal</span>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Cárcel (minutos RP)</label>
+                    <label class="form-label">Prisión (minutos RP)</label>
                     <input type="number" id="crime-jail" class="form-control" placeholder="0" value="0">
+                    <span style="font-size:0.68rem; color:var(--gov-muted);">Establecida por ley penal</span>
                 </div>
             </div>
             <div class="form-row">
@@ -964,7 +948,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Notas adicionales</label>
-                <textarea id="crime-notes" class="form-control" placeholder="Circunstancias del arresto, testigos, evidencias..."></textarea>
+                <textarea id="crime-notes" class="form-control" placeholder="Circunstancias del arresto, detalles adicionales..."></textarea>
             </div>
         </div>
         <div class="modal-footer">
@@ -2182,6 +2166,880 @@
     let NEWS = [];
     let WARRANTS = [];
     let SYSTEM_USERS = [];
+    // Parsed Penal Code Crimes List
+    const PENAL_CODE_CRIMES = [
+  {
+    "article_id": 1001,
+    "name": "Traición",
+    "grade": "G",
+    "description": "1001. Traición (G). Toda persona que, debiendo lealtad a los Estados Unidos, les haga la guerra o se adhiera a sus enemigos, prestándoles ayuda y garantías dentro de los Estados Unidos o en cualquier otro lugar. Será responsable de un delito grave, y la sentencia será determinada plenamente a discreción del tribunal.",
+    "jail_time": 0,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 1002,
+    "name": "Espionaje",
+    "grade": "G",
+    "description": "1002. Espionaje (G). 1. Toda persona que, a sabiendas, comunique, transmita o intente transmitir cualquier información clasificada relativa a información de defensa, instalaciones sanitarias e inteligencia de comunicaciones de los Estados Unidos. 2. Toda persona que ponga de cualquier otro modo a disposición de una persona no autorizada o utilice de cualquier modo perjudicial para la seguridad o los intereses de los Estados Unidos o en beneficio de un país extranjero dicha información definida en el párrafo primero. Será responsable de un delito grave, y la sentencia será determinada plenamente a discreción del tribunal.",
+    "jail_time": 0,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 1003,
+    "name": "Terrorismo doméstico",
+    "grade": "G",
+    "description": "1003. Terrorismo doméstico (G). 1. Toda persona que, con la intención de intimidar o coaccionar a una población civil, o de influir en la política de un gobierno, de cualquier nivel del mismo, o de afectar su conducta, cometa o intente cometer un delito que cause lesiones graves o corporales o la muerte. 2. Toda persona que amenace deliberadamente con cometer un delito que cause lesiones graves o la muerte a otra persona, con el propósito de intimidar o coaccionar a una población civil con la intención específica de que la declaración, hecha verbalmente o por escrito, se tome como una amenaza, aunque no hubiera intención de llevarla a cabo realmente. Será responsable de un delito grave, y la sentencia será determinada plenamente a discreción del tribunal. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO II: DELITOS CONTRA LA PERSONA CAPÍTULO I: HOMICIDIO",
+    "jail_time": 0,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2101,
+    "name": "Asesinato capital",
+    "grade": "G",
+    "description": "2101. Asesinato capital (G). 1. Toda persona que, deliberadamente, quite la vida a un agente de policía, bombero, paramédico, fiscal, juez, jurado u otro funcionario electo en el ejercicio de sus funciones, o a cualquier testigo en un proceso penal. 2. Toda persona que cometa actos especialmente odiosos, atroces o crueles, que pongan de manifiesto una depravación excepcional, en la comisión de un asesinato en primer o segundo grado, o de cualquier asesinato resultante de un contrato de asesinato por encargo. 3. Toda persona que mate deliberadamente a más de un individuo y los asesinatos se cometan bajo un mismo plan o patrón de conducta. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2102,
+    "name": "Asesinato en primer grado",
+    "grade": "G",
+    "description": "2102. Asesinato en primer grado (G). Toda persona que cause la muerte de otro ser humano, mediante acciones premeditadas con alevosía, pretendiendo hacer daño y planeando la forma de hacerlo con antelación. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2103,
+    "name": "Asesinato en segundo grado",
+    "grade": "G",
+    "description": "2103. Asesinato en segundo grado (G). Toda persona que cause la muerte de otro ser humano, mediante acciones no premeditadas con alevosía, pretendiendo hacer daño pero no planeando la forma de hacerlo con antelación. Será responsable de un delito grave punible con un mínimo de (15 minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2104,
+    "name": "Homicidio voluntario",
+    "grade": "G",
+    "description": "2104. Homicidio voluntario (G). Cualquier persona que cometa el homicidio ilegítimo de un ser humano sin malicia en una pelea repentina o en el furor de la ira, o basándose en la creencia honesta pero irrazonable de que es necesaria la fuerza letal (defensa propia imperfecta). Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 50000,
+    "fine_max": 100000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2105,
+    "name": "Homicidio involuntario",
+    "grade": "G",
+    "description": "2105. Homicidio involuntario (G). Toda persona que cometa el homicidio involuntario de un ser humano sin dolo, ya sea causado por un acto ilícito que no constituya delito, o por un acto negligente u omisión. Será responsable de un delito grave punible con un mínimo de (15 minutos) de prisión. CAPÍTULO II: CAOS",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2201,
+    "name": "Intento de agresión",
+    "grade": "M",
+    "description": "2201. Intento de agresión (M). Toda persona que ilícitamente intente cometer una lesión violenta a otra persona o intente poner a otra persona presente en temor razonable de lesión física. Será responsable de un delito menor punible con un mínimo de (5 minutos) de prisión.",
+    "jail_time": 5,
+    "fine_min": 5000,
+    "fine_max": 20000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2202,
+    "name": "Intento de agresión con arma mortal",
+    "grade": "G",
+    "description": "2202. Intento de agresión con arma mortal (G). 1. Toda persona que ilícitamente intente cometer una lesión violenta en otra persona mientras esté en posesión de un arma o instrumento mortal que no sea un arma de fuego. 2. Toda persona que, estando en posesión de un arma de fuego, intente ilegítimamente causar a otra una lesión violenta. Por cualquier incumplimiento de la disposición (a), este delito será considerado un delito grave punible con un mínimo de (15 minutos) de prisión. Por cualquier incumplimiento de la disposición (b), este delito será considerado un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2203,
+    "name": "Agresión",
+    "grade": "M",
+    "description": "2203. Agresión (M). Cualquier persona que haga uso intencionado e ilícito de la fuerza física contra otro individuo. Se exime el artículo 2201. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 5000,
+    "fine_max": 20000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2204,
+    "name": "Agresión agravada",
+    "grade": "G",
+    "description": "2204. Agresión agravada (G). Cualquier persona que haga uso intencionado e ilícito de la fuerza física contra otro individuo, y que resulte en lesiones corporales graves. Se eximen los artículos 2201, 2202 y 2203. Será considerado un delito grave punible con un mínimo de (20 minutos) de prisión. CAPÍTULO III: SECUESTRO Y PRIVACIÓN",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2301,
+    "name": "Secuestro",
+    "grade": "G",
+    "description": "2301. Secuestro (G). Cualquier persona que, por la fuerza o por cualquier otro medio de infundir miedo, robe o se lleve, o retenga, detenga o arreste ilegalmente a cualquier persona con la intención de llevarla a otro país, estado o condado, o a otra parte del mismo condado. Será responsable de un delito grave punible con un mínimo de (40 minutos) de prisión.",
+    "jail_time": 40,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2302,
+    "name": "Trata de personas",
+    "grade": "G",
+    "description": "2302. Trata de personas (G). Cualquier persona que mediante coacción, violencia, fuerza u otros medios ilícitos prive a alguien de su libertad personal con la intención de obtener de dicha persona trabajos o servicios forzados o con la intención de infringir las leyes de proxenetismo del Estado de San Andreas. Será responsable de un delito grave punible con un mínimo de (50 minutos) de prisión.",
+    "jail_time": 50,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2303,
+    "name": "Detención ilegal",
+    "grade": "M",
+    "description": "2303. Detención ilegal (M). Toda persona que, por la fuerza o por cualquier otro medio de infundir miedo, retenga, detenga, retenga o arreste ilegalmente a otra persona. Será responsable de un delito menor punible con un mínimo de (15 minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 2000,
+    "fine_max": 10000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2304,
+    "name": "Tortura",
+    "grade": "G",
+    "description": "2304. Tortura (G). Toda persona que, con la intención de causar dolor y sufrimiento cruel o extremo con fines de venganza, extorsión, persuasión o con cualquier fin sádico, inflija a otra lesiones corporales graves. Será responsable de un delito grave punible con un mínimo de (30 minutos) de prisión.",
+    "jail_time": 30,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2305,
+    "name": "Amenazas criminales",
+    "grade": "M",
+    "description": "2305. Amenazas criminales (M). Cualquier persona que voluntariamente amenace con cometer un delito que razonablemente se crea que puede resultar en la muerte o lesiones corporales graves a otra persona y se haga verbalmente, por escrito o por medio de un dispositivo de comunicación electrónica, mientras la otra persona no esté físicamente presente. Será responsable de un delito menor punible con un mínimo de (5 minutos) de prisión. CAPÍTULO IV: ASALTO",
+    "jail_time": 5,
+    "fine_min": 1000,
+    "fine_max": 5000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2401,
+    "name": "Robo",
+    "grade": "G",
+    "description": "2401. Robo (G). Cualquier persona implicada en la apropiación ilícita de bienes personales que fuesen posesión de otra, directamente de esa persona o en su presencia inmediata, y contra su voluntad por medio de la fuerza o el miedo. Será responsable de un delito grave punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2402,
+    "name": "Robo a mano armada",
+    "grade": "G",
+    "description": "2402. Robo a mano armada (G). Cualquier persona implicada en la apropiación ilícita de bienes personales que fuesen posesión de otra, directamente de esa persona o en su presencia inmediata, y contra su voluntad por medio de la fuerza o el miedo con el uso de un instrumento o arma peligrosa de cualquier tipo, hecha a mano o no. Se exime el artículo 2401. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión. CAPÍTULO V: ACOSO Y VIOLENCIA",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2501,
+    "name": "Violación sexual",
+    "grade": "G",
+    "description": "2501. Violación sexual (G). Cualquier persona que participe en un acto de relación sexual consumado sin el consentimiento de los participantes implicados, una o varias partes. Será responsable de un delito grave punible con un mínimo de (40 minutos) de prisión.",
+    "jail_time": 40,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2502,
+    "name": "Agresión sexual",
+    "grade": "G",
+    "description": "2502. Agresión sexual (G). Toda persona que toque una parte íntima de otra persona contra la voluntad de ésta con fines de excitación sexual, gratificación sexual o abuso sexual. Será responsable de un delito grave punible con un mínimo de (25 minutos) de prisión.",
+    "jail_time": 25,
+    "fine_min": 20000,
+    "fine_max": 50000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2503,
+    "name": "Acoso",
+    "grade": "M",
+    "description": "2503. Acoso (M). Toda persona que participe en una conducta o cometa repetidamente actos dirigidos a una persona concreta, que la alarmen o la alarmen gravemente, y que no sirvan a ningún propósito legítimo después de recibir comunicación verbal o escrita para que cese. Si no existe comunicación verbal o escrita, o no es clara, debe establecerse la intención o no intención de cometer delito. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 500,
+    "fine_max": 2000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 2504,
+    "name": "Violencia doméstica",
+    "grade": "M",
+    "description": "2504. Violencia doméstica (M). Cualquier persona que cometa un intento de agresión, un acto de agresión, agresión con un arma mortal, agresión sexual, violación sexual, tortura, acoso o cualquier grado de asesinato contra una pareja íntima o un miembro de la familia, tal como se define en la ley. Será responsable de un delito menor punible con un mínimo de (15 minutos) de prisión. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO III: DELITOS CONTRA LA SALUD Y SEGURIDAD PÚBLICA",
+    "jail_time": 15,
+    "fine_min": 5000,
+    "fine_max": 15000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 3001,
+    "name": "Elaboración de una sustancia controlada",
+    "grade": "G",
+    "description": "3001. Elaboración de una sustancia controlada (G). Cualquier persona que elabore, prepare, convierta, produzca, transforme, procese o prepare, ya sea directa o indirectamente por medios químicos o naturales, cualquier sustancia ilegal o recetada sin los permisos correspondientes. Será responsable de un delito grave punible con un mínimo de (40  minutos) de prisión.",
+    "jail_time": 40,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 3002,
+    "name": "Posesión de una sustancia controlada",
+    "grade": "M",
+    "description": "3002. Posesión de una sustancia controlada (M). Cualquier persona que posea cualquier sustancia controlada o múltiples sustancias controladas excepto cuando sean suministradas o prescritas por o bajo la dirección de una persona autorizada por el Estado para suministrar, prescribir o administrar sustancias controladas. Será responsable de un delito menor punible con un mínimo de (5  minutos) de prisión.",
+    "jail_time": 5,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 3003,
+    "name": "Posesión de una sustancia controlada con intención de distribuir",
+    "grade": "M",
+    "description": "3003. Posesión de una sustancia controlada con intención de distribuir (M). Cualquier persona que posea cualquier sustancia controlada o múltiples sustancias controladas con la intención de distribuir, suministrar o vender. Se exime el artículo 3002. Será responsable de un delito menor punible con un mínimo de (5  minutos) de prisión.",
+    "jail_time": 5,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 3004,
+    "name": "Venta ilegal de una sustancia controlada",
+    "grade": "G",
+    "description": "3004. Venta ilegal de una sustancia controlada (G). Cualquier persona que posea cualquier sustancia controlada o múltiples sustancias controladas con la intención de distribuir, suministrar o vender. Se eximen los artículos 3002 y 3003. Será responsable de un delito grave punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 3005,
+    "name": "Contrabando de drogas",
+    "grade": "G",
+    "description": "3005. Contrabando de drogas (G). Cualquier persona que intente, o consiga transportar, exportar, almacenar u ocultar sustancias controladas o múltiples sustancias controladas en su persona o en su propiedad. Se eximen los artículos 3002 y 3003. Será responsable de un delito grave punible con un mínimo de (25  minutos) de prisión. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO IV: DELITOS CONTRA LA PAZ PÚBLICA",
+    "jail_time": 25,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4001,
+    "name": "Corrupción en la función pública",
+    "grade": "G",
+    "description": "4001. Corrupción en la función pública (G). Cualquier persona que, mientras esté empleada por una agencia u organización municipal, del condado o a nivel estatal, o cualquier persona que actúe en concierto con un funcionario público, actúe con la intención de defraudar al gobierno, o a cualquier departamento del mismo, para obtener propiedades, servicios, recursos o trato preferente mediante pretensiones fraudulentas, representaciones o promesas falsas. Además de ello, se le prohibirá volver a ejercer cualquier función pública de forma vitalicia. Será responsable de un delito grave punible con un mínimo de (50  minutos) de prisión.",
+    "jail_time": 50,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4002,
+    "name": "Omisión del deber público",
+    "grade": "G",
+    "description": "4002. Omisión del deber público (G). Cualquier persona que, mientras esté empleada por un departamento, organización u otro instrumento gubernamental a nivel municipal, de condado o estatal, se abstenga voluntaria o negligentemente de cumplir con un deber que le impone la ley o que es claramente inherente a la naturaleza de su cargo, lo que consecuentemente afecta negativamente a la seguridad pública, causa un riesgo de daño físico, daño físico real o una violación de este código. Será responsable de un delito grave punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4003,
+    "name": "Soborno de un funcionario público",
+    "grade": "G",
+    "description": "4003. Soborno de un funcionario público (G). Cualquier persona que confiera, u ofrezca, o acuerde ofrecer dinero, bienes, servicios, beneficios o cualquier cosa de valor a un empleado público para influir indebidamente en la acción oficial, opinión, juicio, decisión o ejercicio de discreción de ese individuo como funcionario público. Será responsable de un delito grave punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4004,
+    "name": "Incitación al desorden público",
+    "grade": "G",
+    "description": "4004. Incitación al desorden público (G). Cualquier persona que confiera, u ofrezca, o acuerde ofrecer dinero, bienes, servicios, beneficios o cualquier cosa de valor a un empleado público para influir indebidamente en la acción oficial, opinión, juicio, decisión o ejercicio de discreción de ese individuo como funcionario público. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4005,
+    "name": "Reunión o manifestación ilícita",
+    "grade": "M",
+    "description": "4005. Reunión o manifestación ilícita (M). 1. Cualquier persona que se niegue a dispersarse o abandonar una instalación o terreno público sin poseer un permiso válido y que haya recibido previamente la orden  abandonar el lugar por parte de las fuerzas del orden. 2. Cualquier persona que, a sabiendas, se reúna con otras dos o más personas con la intención de llevar a cabo una conducta que infrinja cualquier estatuto penal, o lleve a cabo una conducta que imprudentemente cree un riesgo de alarma pública, inconveniencia o molestia, excepto las reuniones pacíficas con fines de protesta legal, expresión de la libertad de expresión o cualquier reunión llevada a cabo con un permiso válido. Será responsable de un delito menor punible con un mínimo de (5  minutos) de prisión.",
+    "jail_time": 5,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4006,
+    "name": "Manipulación de evidencia",
+    "grade": "G",
+    "description": "4006. Manipulación de evidencia (G). Cualquier persona que, a sabiendas, altere, modifique, fabrique, plante, coloque, destruya, dañe, oculte o mueva cualquier elemento utilizado como evidencia con la intención de impedir, inducir a error o dificultar un procedimiento legal o producir de cualquier otro modo un efecto engañoso en dicho procedimiento. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 3500,
+    "fine_max": 3500,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4007,
+    "name": "Intimidar a un testigo o víctima",
+    "grade": "G",
+    "description": "4007. Intimidar a un testigo o víctima (G). Toda persona que, a sabiendas y maliciosamente, impida o disuada, o intente impedir o disuadir a un testigo o a una víctima, de asistir o prestar testimonio en cualquier procedimiento o investigación judicial, o de presentar una denuncia que pudiera dar lugar a la adopción de medidas penales. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4008,
+    "name": "Desacato al tribunal",
+    "grade": "M",
+    "description": "4008. Desacato al tribunal (M). 1. Toda persona cuyo comportamiento incontrolado, inapropiado, despectivo o insolente, cometido durante la sesión de un tribunal, a la vista y en presencia de éste, tienda directamente a interrumpir sus actuaciones o a menoscabar el respeto que su autoridad le otorga. 2. Toda persona que, mediante la alteración del orden público, ruidos u otros disturbios, tienda directamente a interrumpir las actuaciones de un tribunal. 3. Cualquier persona que intencionadamente desobedezca o se resista al proceso legal u otro mandato de un tribunal. Esto se extenderá también a las citaciones, las violaciones de la libertad condicional y las violaciones de las órdenes judiciales. 4. Toda persona que publique a sabiendas un informe falso o manifiestamente inexacto de las actuaciones de un tribunal. 5. Toda persona que se niegue a pagar sus multas penales o civiles o no lo haga después de habérsele concedido un plan de pago de dichas multas. Será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4010,
+    "name": "Obstrucción del deber público",
+    "grade": "M",
+    "description": "4010. Obstrucción del deber público (M) (G). 1. Cualquier persona que, sin excusa legal, mediante el uso de coacción, violencia o utilizando medios destinados a retrasar la administración de justicia pública o interferir con la seguridad de un transeúnte o funcionario, deliberadamente obstruya o retrase a un funcionario público en el desempeño de sus funciones, con la intención de causar lesiones corporales graves, o la muerte, a otro. 2. Cualquier persona que sin una excusa legal, mediante el uso de coerción, violencia, o utilizando medios destinados a retrasar la administración de justicia pública o interferir con la seguridad de un transeúnte u oficial, intencionalmente obstruya o retrase a un servidor público en el cumplimiento de sus deberes, con la intención de causar daño grave a la propiedad que exceda $50,000, o alguna otra pérdida grave que exceda $100,000, o daño corporal leve a otro. 3. Cualquier persona que, sin una excusa legal, mediante el uso de la coerción, la violencia o el uso de medios destinados a retrasar la administración de la justicia pública o interferir con la seguridad de un transeúnte o funcionario, deliberadamente obstruya o retrase a un funcionario público en el desempeño de sus funciones, con la intención de: (i) causar alguna pérdida no superior a 50.000 dólares, o (ii) subvertir, o hacer que otro subvierta, el orden público. Por incumplimiento de la disposición (a) será responsable de un delito grave punible con un mínimo de (20  minutos) de prisión. Por incumplimiento de la disposición (b) será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión. Por incumplimiento de la disposición (c) será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4011,
+    "name": "Evasión de un agente de la autoridad",
+    "grade": "G",
+    "description": "4011. Evasión de un agente de la autoridad (G). Cualquier persona que, mientras conduce o al entrar en un vehículo de motor, o bicicleta y con la intención de evadir, voluntariamente huye o de otra manera intenta eludir a un oficial de paz que la persigue. Se exime el artículo 6003. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión. También se emitirá el retiro de 4 puntos de la licencia de conducción. Se actúa contra la persona y no contra el vehículo, por lo que si la evasión comienza en un vehículo A, y continúa en un vehículo B después, el último vehículo (B) puede ser incautado. Si pertenece a otra persona, es ella quien debe demostrar que el vehículo ha sido robado para poder recuperarlo.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4012,
+    "name": "Resistencia al arresto",
+    "grade": "M",
+    "description": "4012. Resistencia al arresto (M). Toda persona que intencionadamente retrase, evite, obstruya, impida o intente impedir que un agente de la autoridad proceda a su detención o a la de otra persona, o en el desempeño o intento de desempeño de sus funciones. Será responsable de un delito menor punible con un mínimo de (5  minutos) de prisión.",
+    "jail_time": 5,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4013,
+    "name": "Mentir a los agentes del gobierno",
+    "grade": "M",
+    "description": "4013. Mentir a los agentes del gobierno (M). Cualquier persona que, a sabiendas y deliberadamente, haga cualquier declaración o representación material falsa, ficticia o fraudulenta en cualquier asunto dentro de la jurisdicción del poder ejecutivo, legislativo o judicial de los Estados Unidos. Será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4014,
+    "name": "Suplantación de identidad",
+    "grade": "M",
+    "description": "4014. Suplantación de identidad (M). 1. Cualquier persona que se presente como otra, finja ser representante de alguna persona u organización o se haga pasar por otra mediante comunicación a través de un sitio web de Internet o por medios electrónicos y realice un acto en tal calidad fingida con la intención de obtener un beneficio o de perjudicar o defraudar a otra persona. 2. Cualquier persona o personas que se presenten falsamente como agentes de las fuerzas del orden, vistiendo o exhibiendo cualquier uniforme, insignia u otro distintivo que se asocie comúnmente con tales agentes, o indicando verbalmente o mediante sus acciones que son agentes de las fuerzas del orden, con la intención de engañar a otra persona haciéndole creer que son agentes de las fuerzas del orden y sometiéndoles a su autoridad. Por incumplimiento de la disposición (a) será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión. Por incumplimiento de la disposición (b) será responsable de un delito menor punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4015,
+    "name": "Agresión a un funcionario público",
+    "grade": "G",
+    "description": "4015. Agresión a un funcionario público (G). 1. Cualquier persona que haga uso intencional e ilegal de la fuerza física contra un funcionario público. 2. Cualquier persona que ilícitamente intente cometer una lesión violenta contra un funcionario público o intente poner a un funcionario público que esté presente en temor razonable de lesión física. Se eximen los artículos 2201, 2202, 2203 y 2204. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4016,
+    "name": "Lavado de dinero",
+    "grade": "G",
+    "description": "4016. Lavado de dinero (G). Cualquier persona que, a sabiendas de que un bien o unos activos monetarios provienen de una conducta delictiva, o de la venta delictiva de una sustancia controlada o de armas, o de un acto de terrorismo, realice dichas transacciones financieras con dicho producto o transporte, transmita o transfiera dichos activos monetarios con la intención de promover la realización de una conducta delictiva, a sabiendas de que dichas transacciones, en su totalidad o en parte, están diseñadas para ocultar o encubrir la naturaleza, la ubicación, el origen, la propiedad o el control del producto de una conducta delictiva, o para evitar cualquier requisito de notificación de transacciones impuesto por la ley. Será responsable de un delito grave punible con un mínimo de (20  minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4017,
+    "name": "Alteración del orden público",
+    "grade": "M",
+    "description": "4017. Alteración del orden público (M). Cualquier persona que participe en lo siguiente: peleas, violencia, comportamiento tumultuoso o amenazador, ruido excesivo, lenguaje/gestos abusivos u obscenos en público. Será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 5000,
+    "fine_max": 5000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 4018,
+    "name": "Asociación ilícita",
+    "grade": "M",
+    "description": "4018. Asociación ilícita (M). 1. Será ilegal que cualquier persona, grupo de personas u organización(es), a sabiendas, se involucre o participe en, o conspire para involucrarse o participar en, un patrón de actividad de crimen organizado, o a través del cobro de una deuda ilegal, al servicio de cualquier empresa, asociación con cualquier empresa o empleados por esta. 2. Será ilegal que cualquier persona, a través de un patrón de actividad criminal de chantaje o a través del cobro de una deuda ilegal, adquiera o mantenga, directa o indirectamente, cualquier interés o control de cualquier empresa que se dedique a una actividad comercial o cuyas actividades afecten a la misma. Será responsable de un delito menor punible con un mínimo de (20  minutos) de prisión. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO V: DELITOS CONTRA EL PATRIMONIO CAPÍTULO I: PROPIEDAD",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5101,
+    "name": "Hurto mayor",
+    "grade": "G",
+    "description": "5101. Hurto mayor (G). Cualquier persona que robe, tome, lleve o se lleve la propiedad personal de otro individuo u organización por un valor igual o superior a $10.000. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5102,
+    "name": "Hurto menor",
+    "grade": "M",
+    "description": "5102. Hurto menor (M). Cualquier persona que robe, tome, lleve o se lleve la propiedad personal de otro individuo u organización por un valor igual o inferior a $9.999. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5103,
+    "name": "Robo de vehículo",
+    "grade": "G",
+    "description": "5103. Robo de vehículo (G). Cualquier persona que robe, intente robar o que tome, conduzca o se lleve el vehículo de otra persona, sin su permiso. Este cargo también incluye entrar a la fuerza en un vehículo estacionado, con o sin el intento de robar el vehículo mismo. Será responsable de un delito grave punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5104,
+    "name": "Robo de un arma de fuego",
+    "grade": "G",
+    "description": "5104. Robo de un arma de fuego (G). Cualquier persona que robe cualquier arma de fuego registrada, sin importar su valor. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5105,
+    "name": "Adquisición de bienes robados",
+    "grade": "M",
+    "description": "5105. Adquisición de bienes robados (M). Cualquier persona que compre o reciba cualquier bien que haya sido robado o que haya sido obtenido de cualquier manera que constituya robo o extorsión con conocimiento de causa. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. CAPÍTULO II: ALLANAMIENTO",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5201,
+    "name": "Allanamiento de morada",
+    "grade": "G",
+    "description": "5201. Allanamiento de morada (G). Cualquier persona que entre o permanezca ilegalmente en cualquier estructura residencial ocupada con o sin saber si hay personas o no en la propiedad cuando se realizó el acto, con la intención de apropiarse de artículos por medios ilícitos, o con la intención de cometer allí un delito. Se exime el artículo 5203. Será responsable de un delito grave punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5202,
+    "name": "Robo con allanamiento de morada",
+    "grade": "G",
+    "description": "5202. Robo con allanamiento de morada (G). Cualquier persona que entre o permanezca ilegalmente en cualquier estructura comercial o residencial desocupada, de propiedad pública o privada, con la intención de apropiarse de artículos por medios ilícitos, o con la intención de cometer allí un delito. Se exime el artículo 5201. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5203,
+    "name": "Intrusión",
+    "grade": "M",
+    "description": "5203. Intrusión (M). Cualquier persona que entre en una propiedad ajena con la intención de interferir u obstruir las actividades comerciales que se llevan a cabo en ella, o entre y ocupe una propiedad ajena sin permiso, o se niegue a abandonar una propiedad privada después de que se lo pida un propietario, gerente, residente o empleado. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. CAPÍTULO III: INTEGRIDAD DE PROPIEDAD",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5301,
+    "name": "Incendio provocado",
+    "grade": "G",
+    "description": "5301. Incendio provocado (G). Toda persona que, voluntaria y maliciosamente, prenda fuego o queme o haga quemar, o que ayude o aconseje a quemar, cualquier estructura, terreno forestal o propiedad. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5302,
+    "name": "Vandalismo",
+    "grade": "M",
+    "description": "5302. Vandalismo (M) (G). Toda persona que deteriore, dañe o destruya bienes que no sean de su propiedad intencionalmente. No incluye la quema. El vandalismo se clasifica en base a los siguientes puntos: 1. Realizar dibujos, escribir, o aplicar cualquier tipo de graffiti o pintura en propiedades ajenas sin el consentimiento del propietario. 2. Rayar, romper cristales, perforar neumáticos. 3. Dañar o destruir infraestructura de propiedad ajena. 4. Dañar, marcar, o de cualquier manera alterar monumentos, estatuas, edificios históricos, o cualquier otra propiedad con valor cultural o histórico. 5. Dañar escaparates, mobiliario de tiendas, mercancía, o cualquier otro bien dentro de establecimientos comerciales. 6. Dañar o interferir con sistemas de servicios como el suministro de agua, telecomunicaciones o transporte. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. Será responsable de un delito grave punible con un mínimo de (15 minutos) de prisión, toda acción de vandalismo que sea ejercida sobre una propiedad del estado.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 5303,
+    "name": "Malversación de fondos",
+    "grade": "G",
+    "description": "5303. Malversación de fondos (G). Toda persona que, existiendo una relación fiduciaria (de buena fe) o de confianza entre él o ella y una organización privada o un organismo gubernamental estatal o local: 1. Se apodere ilícitamente de bienes o los tenga bajo su custodia en virtud de su empleo. 2. Participe ilegalmente en una conducta sistemática que constituye una utilización o apropiación fraudulenta de bienes para su propio uso. 3. Actúa con la intención de privar al propietario del uso de dichos bienes. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO VI: DELITOS CONTRA LA SEGURIDAD VIAL",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6001,
+    "name": "Conducir sin una licencia válida",
+    "grade": "M",
+    "description": "6001. Conducir sin una licencia válida (M). Toda persona que conduzca un vehículo de motor con una licencia caducada, suspendida/revocada, o que conduzca un vehículo de motor sin licencia. Será responsable de un delito menor punible con un mínimo de (5 minutos) de prisión. El vehículo deberá ser embargado.",
+    "jail_time": 5,
+    "fine_min": 2500,
+    "fine_max": 2500,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6002,
+    "name": "Accidente con fuga",
+    "grade": "M",
+    "description": "6002. Accidente con fuga (M) (G). 1. Toda persona que, conduciendo un vehículo de motor, se vea implicada en un accidente que resulte solo en daños a bienes o a otros vehículos, y no detenga inmediatamente el vehículo en el lugar del accidente. 2. Toda persona que, conduciendo un vehículo de motor, se vea implicada en un accidente que resulte en lesiones a otra persona, o en la muerte de otra persona, y no detenga inmediatamente el vehículo en el lugar del accidente. Por cualquier incumplimiento de la disposición (a), será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. Por cualquier incumplimiento de la disposición (b), será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6003,
+    "name": "Exceso de velocidad",
+    "grade": "I",
+    "description": "6003. Exceso de velocidad (I). Cualquier persona, en todo momento, en cualquier carretera oficial estatal, del condado o local de cualquier escala, deberá mantener una velocidad máxima de 120km/h en autopistas, 80km/h en carreteras del condado fuera de los límites de la ciudad, 60km/h en carreteras dentro de los límites de la ciudad, y 45km/h en carreteras en áreas designadas como “Parque Estatal”, zonas escolares y zonas universitarias. Los conductores deben usar su criterio al conducir en carreteras con condiciones especiales (como carreteras estrechas, sin pavimentar, o en mal estado). Este delito será considerado una infracción sancionable con una multa y se embargará el vehículo según las siguientes disposiciones: 1. MULTA: $400 en caso de exceder el límite de velocidad. 2. MULTA: $1.200 + (-5pts) de la licencia de conducir, en caso de exceder el límite de velocidad con una diferencia de más de 30km/h.",
+    "jail_time": 0,
+    "fine_min": 1200,
+    "fine_max": 1200,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6004,
+    "name": "Incumplimiento de señales de tráfico",
+    "grade": "I",
+    "description": "6004. Incumplimiento de señales de tráfico (I). Un vehículo que no obedece las señales de tráfico, tales como: ignorar señales, bloqueos de carreteras, señales manuales u otros equipos utilizados por las fuerzas del orden para dirigir el tráfico. Este delito será considerado una infracción sancionable con una multa. Se suspenderá la licencia de conducir en caso de generar un peligro inminente.",
+    "jail_time": 0,
+    "fine_min": 300,
+    "fine_max": 300,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6005,
+    "name": "Estacionamiento ilegal",
+    "grade": "I",
+    "description": "6005. Estacionamiento ilegal (I). Cualquier vehículo estacionado ilegalmente, tal como: * Obstruir un carril de circulación e impedir que el tráfico fluya correctamente. * Obstruir una vía de acceso, camino, calle privada o callejón utilizado por el tráfico. * Obstruir un estacionamiento e impidiendo que los vehículos salgan o entren en él. * Estacionar dentro de un paso de peatones señalizado. * Estacionar sobre cualquier acera (no aplica al estacionar con dos ruedas laterales). * Estacionar en cualquier túnel o puente. * Estacionar de manera que un vehículo ocupe dos plazas de estacionamiento. * Estacionar en lugares especiales, ya sea para discapacidad o servicios de emergencia. Este delito será considerado una infracción sancionable con una multa. Y, aquellos vehículos que obstaculicen la circulación o supongan un riesgo para la población podrán ser embargados.",
+    "jail_time": 0,
+    "fine_min": 500,
+    "fine_max": 500,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6006,
+    "name": "Conducción temeraria",
+    "grade": "M",
+    "description": "6006. Conducción temeraria (M). Cualquier persona que no tenga cuidado o precaución al conducir su vehículo con evidente desprecio por la seguridad de los demás, o que conduzca de forma gravemente negligente poniendo en peligro la vida, la integridad física o los bienes de cualquier persona. Se exime el artículo 6007. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. El vehículo deberá ser embargado y la licencia de conducción descontada en 5 puntos.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6007,
+    "name": "Conducción imprudente de un vehículo",
+    "grade": "I",
+    "description": "6007. Conducción imprudente de un vehículo (I). Cualquier persona que conduzca un vehículo de manera que pueda causar lesiones personales o daños a otro vehículo o individuo. Esto incluye pero no se limita a enviar mensajes de texto mientras conduce, no respetar los carriles o conducir sin luces entre el atardecer y el amanecer, teniendo en cuenta que se deben usar las luces entre las 20:00 y las 6:30. Este delito será considerado una infracción sancionable con una multa.",
+    "jail_time": 0,
+    "fine_min": 400,
+    "fine_max": 400,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6008,
+    "name": "Uso ilegal del sistema hidráulico",
+    "grade": "I",
+    "description": "6008. Uso ilegal del sistema hidráulico (I). Cualquier persona que conduzca un vehículo que tenga un equipo hidráulico instalado en el chasis o en otros componentes del vehículo sin necesidad o propósito legítimo mientras se encuentre en una carretera estatal, del condado o local. Este delito será considerado una infracción sancionable con una multa.",
+    "jail_time": 0,
+    "fine_min": 1200,
+    "fine_max": 1200,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6009,
+    "name": "Conducir bajo la influencia de alcohol o narcóticos",
+    "grade": "M",
+    "description": "6009. Conducir bajo la influencia de alcohol o narcóticos (M). Cualquier persona que conduzca o maneje un vehículo o maquinaria bajo los efectos del alcohol por encima del límite legal de 0,08% BAV bajo los efectos de estupefacientes que alteran sus capacidades psicofísicas, independientemente de si esas sustancias son legales o ilegales. Se eximen los artículos 6006 y 6007. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. El vehículo deberá ser embargado y la licencia de conducción descontada en 5 puntos.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6010,
+    "name": "Carreras ilegales",
+    "grade": "M",
+    "description": "6010. Carreras ilegales (M). Cualquier persona que realice una carrera o competición no autorizada y no señalizada en carreteras o circuitos pavimentados de la ciudad, el condado o el Estado que incite a cometer otras infracciones o demuestre un potencial de peligro. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión. El vehículo deberá ser embargado y la licencia de conducción revocada.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6011,
+    "name": "Cruce de forma indebida",
+    "grade": "I",
+    "description": "6011. Cruce de forma indebida (I). Toda persona que, de forma intencionada o temeraria, cruce una carretera como peatón de manera que cree un riesgo previsible de obstaculizar el tráfico o cree de otro modo un peligro para los usuarios de la carretera. Este delito será considerado una infracción sancionable con una multa.",
+    "jail_time": 0,
+    "fine_min": 100,
+    "fine_max": 100,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6012,
+    "name": "No usar el cinturón de seguridad o equipo de seguridad",
+    "grade": "I",
+    "description": "6012. No usar el cinturón de seguridad o equipo de seguridad (I). Cualquier persona que mientras conduce un vehículo motorizado, no se asegure apropiadamente con el cinturón de seguridad, o no respete las normas de seguridad de tráfico cuando conduce vehículos tales como motocicletas, todoterrenos y otros vehículos con ruedas sin casco u otro equipo de seguridad apropiado para su correcta conducción. Este delito será considerado una infracción sancionable con una multa.",
+    "jail_time": 0,
+    "fine_min": 800,
+    "fine_max": 800,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 6013,
+    "name": "Manejo de aeronave sin licencia",
+    "grade": "M",
+    "description": "6013. Manejo de aeronave sin licencia (M). Cualquier persona que maneje una aeronave sin licencia correspondiente. Será responsable de un delito menor punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6013,
+    "name": "Manejo temerario de una aeronave",
+    "grade": "G",
+    "description": "6013. Manejo temerario de una aeronave (G). Cualquier persona que ponga en peligro su vida o la de otros por el manejo de su aeronave, como volar a baja altura en un área urbana o suburbana. Será responsable de un delito grave punible con un mínimo de (30 minutos) de prisión, revocando la licencia de piloto.",
+    "jail_time": 30,
+    "fine_min": 20000,
+    "fine_max": 20000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 6014,
+    "name": "Evasión aérea",
+    "grade": "G",
+    "description": "6014. Evasión aérea (G). Cualquier persona que evada a cualquier cuerpo de seguridad a través de una aeronave, ya sea como piloto o como pasajero. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión, revocando la licencia de piloto. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO VI: DELITOS CONTRA LA MORAL PÚBLICA",
+    "jail_time": 20,
+    "fine_min": 50000,
+    "fine_max": 50000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7001,
+    "name": "Exhibicionismo",
+    "grade": "M",
+    "description": "7001. Exhibicionismo (M). Cualquier persona que deliberada y obscenamente exponga su cuerpo completo, o sus partes privadas, en cualquier lugar público, o en cualquier lugar donde estén presentes otras personas. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7002,
+    "name": "Conducta obscena o inapropiada en público",
+    "grade": "M",
+    "description": "7002. Conducta obscena o inapropiada en público (M). Cualquier persona que pida a alguien que se involucre o participe en una conducta obscena, inapropiada o indiscreta en cualquier lugar público, en cualquier lugar abierto al público o expuesto a la vista del público. Será responsable de un delito menor punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7003,
+    "name": "Prostitución",
+    "grade": "M",
+    "description": "7003. Prostitución (M). Cualquier persona que anime o persuada a otra persona a mantener relaciones sexuales con fines económicos, ya sea la prostituta o el cliente. Será responsable de un delito menor punible con un mínimo de (5 minutos) de prisión. El vehículo deberá ser embargado. En esta sección no son tomados en cuenta aquellos negocios dedicados a servir tanto como bar como área de bailes exóticos. Si en estos lugares se llegasen a presentar relaciones sexuales a cambio de fines económicos, el dueño del negocio será multado por $15.000.",
+    "jail_time": 5,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7004,
+    "name": "Proxenetismo",
+    "grade": "G",
+    "description": "7004. Proxenetismo (G). Cualquier persona que solicite, anuncie, ayude, proporcione transporte o supervise de cualquier otro modo a personas involucradas en la prostitución y se quede el dinero ganado durante la comisión del delito de prostitución. Cualquier persona que cause, induzca o anime a otra persona a prostituirse mediante promesas, amenazas, violencia o cualquier otro plan. Será responsable de un delito grave punible con un mínimo de (10 minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7005,
+    "name": "Maltrato de menores",
+    "grade": "G",
+    "description": "7005. Maltrato de menores (G). Toda persona que intencionalmente cause a un menor de 18 años un castigo físico cruel o inhumano o una lesión que provoque un traumatismo, o ponga a un menor en una situación o circunstancia que pueda provocar un daño físico grave o una lesión, o le cause un daño físico leve o una lesión. Será responsable de un delito grave punible con un mínimo de (20 minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7006,
+    "name": "Venta de alcohol, tabaco o estupefacientes a un menor",
+    "grade": "M",
+    "description": "7006. Venta de alcohol, tabaco o estupefacientes a un menor (M). Cualquier persona que venda, dé, sirva o permita que se sirvan bebidas alcohólicas, tabaco o estupefacientes a un menor de 21 años, o permita que un menor de 21 años consuma dichos productos en un local autorizado. Será responsable de un delito menor punible con un mínimo de (5 minutos) de prisión.",
+    "jail_time": 5,
+    "fine_min": 3000,
+    "fine_max": 3000,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 7007,
+    "name": "Posesión de alcohol, tabaco o estupefacientes",
+    "grade": "M",
+    "description": "7007. Posesión de alcohol, tabaco o estupefacientes (M). Cualquier persona menor de 21 años que tenga alcohol, productos derivados del alcohol, o parezca estar bajo los efectos del alcohol, o cualquier producto derivado del tabaco o estupefacientes, sean regulados o no. Será responsable de un delito menor punible con un mínimo de (5 minutos) de prisión. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO VII: DELITOS CON ARMAS",
+    "jail_time": 5,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "SÍ"
+  },
+  {
+    "article_id": 8001,
+    "name": "Posesión delictiva de un arma de fuego",
+    "grade": "M",
+    "description": "8001. Posesión delictiva de un arma de fuego (M). Toda persona que lleve un arma encima o en su vehículo, lugar de trabajo u otro lugar privado sin los permisos pertinentes o sin el conocimiento o consentimiento (implícito o expreso) de una persona que se encuentre en dicho lugar y que posea dichos permisos. Esto se aplicará también a las armas de fuego sin número de serie válido. Será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8002,
+    "name": "Posesión agravada de armas de fuego",
+    "grade": "G",
+    "description": "8002. Posesión agravada de armas de fuego (G). Toda persona que lleve consigo, o en su vehículo, lugar de trabajo u otro lugar privado, más de tres armas de fuego sin licencia y registro de las mismas. Se exime el artículo 8001. Será responsable de un delito grave punible con un mínimo de (20  minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8003,
+    "name": "Posesión de explosivo o artefacto incendiario",
+    "grade": "G",
+    "description": "8003. Posesión de explosivo o artefacto incendiario (G). Cualquier persona que posea explosivo o artefacto incendiario sin el permiso correspondiente. Será responsable de un delito grave punible con un mínimo de (30  minutos) de prisión.",
+    "jail_time": 30,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8004,
+    "name": "Venta sin licencia de armas de fuego o explosivos",
+    "grade": "G",
+    "description": "8004. Venta sin licencia de armas de fuego o explosivos (G). Toda persona que venda, dé o compre ilegalmente armas de fuego, explosivos, artefactos incendiarios o cualquier otro dispositivo similar o improvisado de cualquier tipo sin los debidos permisos o autorizaciones. Será responsable de un delito grave punible con un mínimo de (20  minutos) de prisión.",
+    "jail_time": 20,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8005,
+    "name": "Empuñar un arma letal",
+    "grade": "G",
+    "description": "8005. Empuñar un arma letal (G). Cualquier persona que, excepto en defensa propia, en presencia de otra persona, saque, sostenga, apunte o muestre un arma o instrumento letal, arma de fuego u objetivo similar, cargado o descargado, de forma agresiva, violenta o amenazadora para inducir miedo a otra persona. Será responsable de un delito grave punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8006,
+    "name": "Disparar un arma de fuego en público",
+    "grade": "G",
+    "description": "8006. Disparar un arma de fuego en público (G). Toda persona que dispare intencionalmente un arma de fuego en un edificio, vehículo o en una zona pública u otra zona habitada, provocando un grave peligro, daño físico real o riesgo de daño físico a otra persona. Se exime el artículo 8005 y 8009. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8007,
+    "name": "Disparar un arma de fuego desde un vehículo motor",
+    "grade": "G",
+    "description": "8007. Disparar un arma de fuego desde un vehículo motor (G). Todo conductor o propietario de un vehículo que, a sabiendas, permita que otra persona dispare un arma de fuego desde el vehículo. Toda persona que, voluntariamente y maliciosamente, dispare un arma de fuego desde un vehículo de motor contra otra persona que no sea ocupante de ese vehículo. Se eximen los artículos 8005, 8006 y 8009. Será responsable de un delito grave punible con un mínimo de (15  minutos) de prisión.",
+    "jail_time": 15,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8008,
+    "name": "Uso imprudente de armas de fuego",
+    "grade": "M",
+    "description": "8008. Uso imprudente de armas de fuego (M). Toda persona que utilice un arma de fuego de manera gravemente imprudente, poniendo en peligro la vida, la integridad física o los bienes de cualquier persona. Toda persona que porte o transporte un arma de fuego bajos los efectos de marihuana, estupefacientes, drogas psicotrópicas o cualquier otra sustancia controlada, o con una tasa de alcoholemia superior al 0,08%. Cualquier persona cuya licencia para cazar, o cuyo derecho a cazar en posesión de un arma de fuego, haya sido revocado, y que posteriormente cace en posesión de un arma de fuego. Será responsable de un delito menor punible con un mínimo de (10  minutos) de prisión.",
+    "jail_time": 10,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  },
+  {
+    "article_id": 8009,
+    "name": "Posesión ilegal de munición",
+    "grade": "G",
+    "description": "8009. Posesión ilegal de munición (G). Cualquier persona que guarde o posea munición de arma de fuego en su persona, vehículo, lugar de negocio u otro lugar de su propiedad o que gestione directamente mientras haya sido condenada previamente por un delito grave. Será responsable de un delito grave punible con un mínimo de (5  minutos) de prisión. STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, DELITOS Y PENAS TÍTULO VIII: IMPLICADOS EN UN DELITO CAPÍTULO I: RESPONSABILIDAD DEL CÓMPLICE Y DEL ENCUBRIDOR 8101. Cómplice. Toda persona que intencionalmente ayude a otra en la comisión de un delito penado por este código será penalmente responsable y será acusada de la misma manera, como si fuera la autora original del delito. 8102. Encubridor. Cualquier persona que albergue, oculte, conforte o ayude al autor de un delito penado por este código con la intención de ayudarlo en la comisión de dicho delito o de obstaculizar o impedir su detención, juicio o condena, es penalmente responsable y se le imputará una pena y puntos penales reducidos a la mitad sobre el cargo original. CAPÍTULO II: ATENUANTES Y AGRAVANTES 8201. Tentativa. Una persona es culpable de tentativa de delito cuando, con la intención de cometer un delito, tenga una actitud orientada a cometerlo, pero no lo logre, o sea impedida o interceptada en su comisión. Será castigado, cuando la ley no contemple la pena de dichas tentativas, con la mitad de la pena y puntos penales del cargo original. 8202. Conspiración. Una persona es culpable de conspiración cuando, con intención de que se cometa un delito, se pone de acuerdo con una o más personas para cometer o hacer que se cometa dicho delito. Se le aplicará una reducción de un cuarto de la pena y puntos penales respecto al cargo original. Es necesario que se cometa un acto manifesto (flagrante). 8203. Incitación. Una persona es culpable de incitación cuando, con la intención de que otra persona cometa un delito, solicite, pida, ordene o intente de cualquier otro modo que dicha persona cometa un delito. Se le aplicará una pena y puntos criminales reducidos en un cuarto con respecto al cargo original. 8204. Penas. Las penas son acumulativas en tiempo, es decir que mientras más artículos se violen, mayor va a ser el tiempo de pena. 1. Todos los artículos tienen un tiempo mínimo de prisión establecido, sin embargo no uno máximo, pero se establece que el máximo de tiempo para cada pena es la diferencia de (10 minutos) del mínimo original. O sea que, si el mínimo de una pena es de (20 minutos), solamente se podrá estirar hasta (30 minutos). Tampoco se puede acumular la misma pena más de una vez. NO VIGENTE 2. Los juicios (roleados por entorno) pasarán a ser de carácter obligatorio en caso de que la pena supere los (120 minutos) de prisión. Por ende, se deberá pactar una fecha de juicio con el tribunal de justicia para proceder con la pena. 3. En caso de que la pena supere los (360 minutos) de prisión, será considerada como pena de prisión perpetua (o sea que se realiza un CK al personaje). STATE OF SAN ANDREAS PEN - CÓDIGO PENAL, PRISIÓN Y CÁRCELES PARTE II: PRISIÓN Y CÁRCELES TÍTULO I: ENCARCELAMIENTO DE PRESOS CAPÍTULO I: ESTABLECIMIENTO DE PRISIONES LOCALES Sec. 1. Hay y seguirá habiendo una prisión local a modo de correccional que se conocerá como la Twin Towers Correctional Facility (TTCF), operada por el Departamento del Sheriff del Condado de Los Santos (LSSD). Sec. 2. La Institución Correccional estará ubicada entre Commerce y Little Mexico, Los Santos, San Andreas. Sec. 3. El propósito principal de la Institución del TTCF será el encarcelamiento de delincuentes masculinos y femeninos que, en opinión del Condado, parezcan capaces de rehabilitación moral y restauración a la buena ciudadanía. CAPÍTULO II: ADMINISTRACIÓN DE PRISIONES LOCALES Sec. 1. Por la presente se autoriza al departamento a contratar provisiones, ropa, medicinas, forraje, combustible y todos los demás suministros básicos necesarios para el sostenimiento de la TTCF por cualquier período de tiempo, y dichos contratos se limitarán a comerciantes de buena fe en las diversas clases de artículos contratados. Sec. 2. La División de Custodia del LSSD completará todas las tareas asociadas con los reclusos a los que se les otorga libertad condicional. Sec. 3. El departamento recopilará información de autoidentificación relacionada con la raza u origen étnico de las personas admitidas, bajo custodia, liberadas y en libertad condicional, que incluirán, entre otras, indios americanos/nativos de Alaska, bangladesíes, negros, camboyanos, chinos, colombianos, cubanos, fiyianos, filipinos, guameños o chamorros, guatemaltecos, natifvos de Hawái, otros hispanos no incluidos en la lista, hmong, indios, indonesios, jamaiquinos, japoneses, coreanos, laosianos, malayos, mexicanos, nicaragüenses, otros asiáticos no incluidos en la lista, otros isleños del Pácifico no incluidos en la lista, paquistaníes, puertorriqueños, salvadoreños, samoanos, esrilaqueses, taiwaneses, tailandeses, tonganos, desconocidos, vietnamitas y blancos. Sobre la base de esa información de autoidentificación, el departamento preparará y publicará datos demográficos mensuales relacionados con la carrera o el origen étnico de las personas admitidas, bajo custodia, liberadas y en libertad condicional, desglosadas por las mismas categorías de raza y etnia utilizadas por el departamento con el fin de obtener información de autoidentificación. Sec. 4. Será deber del departamento enjuiciar todas las demandas, en derecho o en equidad, que sean necesarias para proteger los derechos del Estado en asuntos de propiedad relacionados con las prisiones y su administración, y dichas demandas se procesarán en nombre del departamento. Sec. 5. Se entregará a cada recluso una copia de las normas y reglamentos que prescriben los deberes y obligaciones de los reclusos en una prisión estatal u otro centro bajo la jurisdicción del Departamento del Sheriff del Condado de Los Santos. Sec. 6. La dirección de la TTCF hará que se lleve un registro de las violaciones de la institución y de la clase de castigos, si los hubiere, que se administren a los reclusos; el delito cometido; la regla o reglas violadas; la naturaleza de la pena administrada; la autoridad que ordena dicha sanción; la duración del tiempo durante el cual el delincuente estuvo sujeto a castigo; y el estado de salud del recluso. Sec. 7. El departamento proveerá a cada recluso de una cama, una cubierta suficiente de mantas y prendas de vestir de material sustancial y de fabricación distintiva, y suficiente comida sencilla y saludable de la variedad que sea más propicia para la buena salud y que incluirá la disponibilidad de comidas a base de plantas. Sec. 8. Ningún funcionario o empleado del departamento recibirá, directa o indirectamente, ninguna compensación por sus servicios que no sea la prescrita o autorizada por la ley; tampoco recibirá compensación alguna, directa o indirectamente, por cualquier acto o servicio que pueda hacer o realizar para o en nombre de cualquier contratista, agente o empleado de un contratista. Sec. 9. Ningún funcionario o empleado del departamento, o contratista, o empleado de un contratista, podrá, sin permiso de la dirección, hacer ningún regalo a un prisionero, ni recibir ninguno de un prisionero, ni tener ningún trueque o trato con un prisionero. CAPÍTULO III: DERECHOS CIVILES DE LOS PRISIONEROS Sec. 1. Una persona sentenciada a prisión puede ser privada durante ese período de confinamiento de tales derechos, y solo de aquellos derechos, que estén razonablemente relacionados con intereses penológicos legítimos. Sec. 2. Cada persona tendrá los siguientes derechos civiles: 1. Mantener correspondencia confidencial con cualquier miembro del Colegio de Abogados del Estado o titular de un cargo público, siempre que las autoridades penitenciarias puedan abrir e inspeccionar el correo entrante para detectar contrabando. 2. Comprar, recibir y leer todos y cada uno de los periódicos, publicaciones periódicas y libros aceptados para su distribución. Sec. 3. Ninguna persona sentenciada a prisión o alojada en una prisión se le administrará ningún medicamento psiquiátrico sin su consentimiento informado previo, a menos que un psiquiatra determine que el recluso debe ser tratado con medicamentos psiquiátricos. Sec. 4. Cuando sea necesario que una persona encarcelada sea llevada ante cualquier tribunal para ser juzgada por un delito grave, o para un examen ante un gran jurado o magistrado preliminar a dicho juicio, o con el propósito de escuchar una moción u otro procedimiento, para anular un fallo, una orden para la remoción temporal del prisionero, y para la presentación del prisionero ante dicho tribunal, gran jurado o magistrado, debe ser hecha por el tribunal superior del condado; dicha orden se dictará únicamente sobre la base de la declaración jurada del fiscal del distrito o del abogado defensor, en la que se indique el propósito por el cual dicha persona debe comparecer ante el tribunal, el gran jurado o el magistrado o por iniciativa propia del tribunal. La orden será ejecutada por el Sheriff del Condado en el que se dicte, cuyo deber será llevar al prisionero ante el tribunal, para mantenerlo en un lugar seguro, y cuando ya no se requiera presencia del prisionero para devolver al prisionero a la prisión de donde fue sacado. Sec. 5. Si en una acción civil o procedimiento especial un testigo es un preso, se puede dictar una orden para que el preso sea interrogado en la prisión por deposición. Sec. 6. El Departamento se asegurará de que sus protocolos para responder al abuso sexual incluyan todo lo siguiente: 1. La seguridad de un recluso o pupilo que alegue que ha sido víctima de abuso sexual se garantizará de manera inmediata y discreta. 2. Los reclusos que presenten denuncias de abuso sexual no serán sancionados, ni directa ni indirectamente, por ello, si una persona es segregada para su propia protección, la segregación debe ser no disciplinaria. 3. Cualquier persona que, a sabiendas o deliberadamente, presente información inexacta o falsa con respecto al abuso sexual es punible de conformidad con las regulaciones del departamento. 4. Bajo ninguna circunstancia es apropiado sugerir que un recluso debe luchar para evitar la violencia sexual o sugerir que el abuso sexual denunciado no es lo suficientemente significativo como para ser abordado por el personal. 5. El personal no discriminará en su repuesta a los reclusos y pupilos que sean homosexuales, bisexuales o transgénero que sufran agresión sexual, o que informen que sufrieron abuso sexual. 6. Quedarán estrictamente prohibidas las represalias contra un recluso por hacer una denuncia de abuso sexual. Sec. 7. Un funcionario de la TTC de sexo masculino o femenino no llevará a cabo un cacheo de un recluso del sexo opuesto a menos que el mismo presente un riesgo de daño inmediato a sí misma o a otras personas o riesgo de fuga y no haya una funcionaria de prisiones disponible para llevar a cabo el registro. Sec. 8. Un funcionario penitenciario de sexo masculino no entrará en una zona de la institución de carácter femenino y viceversa, a menos que haya un permiso desde la dirección. CAPÍTULO IV: TRATO DE PRISIONEROS Sec. 1. No estará permitido emplear acciones crueles, corporales o inusitadas, infligir cualquier trato o permitir cualquier falta de cuidado que pueda dañar o menoscabar la salud del recluso por parte del personal. Sec. 2. Ninguna persona confinada estará sujeta a ninguna acción disciplinaria institucional posterior a una absolución en un tribunal de justicia por cargos penales presentados y juzgados por el acto u omisión que es la única base de la acción disciplinaria institucional. Cuando el acto u omisión que dé lugar a la absolución se mencione de alguna manera en cualquier expediente del Departamento relativo al recluso, el hecho de la absolución por el tribunal de justicia se inscribirá claramente junto a cada una de esas referencias. CAPÍTULO V: VETERANOS Sec. 1. El Departamento desarrollará políticas de orientación relativas a la liberación de veteranos que son reclusos. Las políticas se desarrollarán con la intención de ayudar a los veteranos que son reclusos a presentar reclamos de beneficios federales para veteranos, o a establecer derechos a cualquier otro privilegio, preferencia, cuidado o compensación provisto por la ley debido al servicio honorable en el ejército. Sec. 2. En la institución, una organización de servicios para veteranos puede ofrecerse como voluntaria para servir como defensora de servicios para veteranos. Sec. 3. El defensor coordinará con el Departamento para obtener asesoramiento, asistencia y capacitación, y para evaluar la efectividad del plan de prevención de reincidencia económica para veteranos. Sec. 4. Defensor significa una organización de servicios para veteranos que está certificada por el gobierno local y que se ha ofrecido como voluntaria para servir como defensora de servicios para veteranos. Y veterano significa una persona que ha sido dada de baja del Ejército de los Estados Unidos, la Armada de los Estados Unidos, la Fuerza Aérea de los Estados Unidos, el Cuerpo de Marines de los Estados Unidos, la Guardia Costera de los Estados Unidos, la Fuerza Especial de los Estados Unidos, la Guardia Nacional de cualquier estado o la Marina Mercante.",
+    "jail_time": 360,
+    "fine_min": 0,
+    "fine_max": 0,
+    "fianza": "NO"
+  }
+];
+
     let GOVERNMENT_REPORTS = [];
     let citizenCurrentPage = 1;
     let solvencyCurrentPage = 1;
@@ -3943,11 +4801,114 @@
     function openCrimeModal(citizenId, citizenName) {
         document.getElementById('crime-citizen-id').value = citizenId;
         document.getElementById('crime-citizen-info').textContent = `Ciudadano: ${citizenName} (ID: ${citizenId})`;
-        document.getElementById('crime-type').selectedIndex = 0;
+        document.getElementById('crime-type').value = '';
         document.getElementById('crime-fine').value = 0;
         document.getElementById('crime-jail').value = 0;
         document.getElementById('crime-notes').value = '';
+        
+        // Reset custom search inputs
+        const searchInp = document.getElementById('crime-search-input');
+        if (searchInp) searchInp.value = '';
+        const resultsDiv = document.getElementById('crime-search-results');
+        if (resultsDiv) { resultsDiv.innerHTML = ''; resultsDiv.style.display = 'none'; }
+        const selContainer = document.getElementById('selected-crime-container');
+        if (selContainer) selContainer.style.display = 'none';
+        
         openModal('modal-crime');
+    }
+
+    window.filterPenalCodeCrimes = function() {
+        const query = document.getElementById('crime-search-input').value.trim().toLowerCase();
+        const resultsDiv = document.getElementById('crime-search-results');
+        if (!resultsDiv) return;
+        
+        if (!query) {
+            resultsDiv.innerHTML = '';
+            resultsDiv.style.display = 'none';
+            return;
+        }
+        
+        // Filter elements
+        const matches = PENAL_CODE_CRIMES.filter(c => 
+            String(c.article_id).includes(query) || 
+            c.name.toLowerCase().includes(query) || 
+            c.description.toLowerCase().includes(query)
+        ).slice(0, 10); // Limit to top 10 matches for neatness
+        
+        if (matches.length === 0) {
+            resultsDiv.innerHTML = '<div style="color:#555;padding:8px;font-size:0.75rem;text-align:center;">Ningún cargo penal coincide.</div>';
+            resultsDiv.style.display = 'block';
+            return;
+        }
+        
+        resultsDiv.innerHTML = matches.map(c => {
+            const badgeClass = c.grade === 'G' ? 'badge-red' : (c.grade === 'M' ? 'badge-orange' : 'badge-green');
+            const gradeLabel = c.grade === 'G' ? 'Grave' : (c.grade === 'M' ? 'Menor' : 'Infracción');
+            const formattedJail = c.jail_time > 0 ? `${c.jail_time} min` : '';
+            const formattedFine = c.fine_max > 0 ? `$${c.fine_max.toLocaleString()}` : '';
+            const penaltyText = [formattedJail, formattedFine].filter(Boolean).join(' | ');
+            
+            return `
+            <div onclick="selectCrimeForRecord(${c.article_id})" 
+                 onmouseover="this.style.background='rgba(59, 130, 246, 0.15)'" 
+                 onmouseout="this.style.background='transparent'" 
+                 style="padding: 10px 12px; border-bottom: 1px solid #1a1a1a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s; text-align: left;">
+                <div style="flex: 1; padding-right: 10px; overflow: hidden;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.85rem;">${c.article_id}. ${c.name}</span>
+                    <div style="font-size: 0.72rem; color: #555; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${c.description}</div>
+                </div>
+                <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span class="badge ${badgeClass}" style="font-size: 0.65rem; padding: 2px 6px;">${gradeLabel}</span>
+                    ${penaltyText ? `<span style="font-size: 0.72rem; color: #10b981; font-weight: bold;">${penaltyText}</span>` : ''}
+                </div>
+            </div>
+            `;
+        }).join('');
+        resultsDiv.style.display = 'block';
+    }
+
+    window.selectCrimeForRecord = function(articleId) {
+        const c = PENAL_CODE_CRIMES.find(x => x.article_id === articleId);
+        if (!c) return;
+        
+        document.getElementById('crime-type').value = `${c.article_id}. ${c.name}`;
+        
+        // Show selected crime info container
+        const selContainer = document.getElementById('selected-crime-container');
+        const selBadge = document.getElementById('selected-crime-badge');
+        const selName = document.getElementById('selected-crime-name');
+        const selDesc = document.getElementById('selected-crime-desc');
+        
+        if (selContainer && selName && selDesc) {
+            const badgeClass = c.grade === 'G' ? 'badge-red' : (c.grade === 'M' ? 'badge-orange' : 'badge-green');
+            const gradeLabel = c.grade === 'G' ? 'Delito Grave' : (c.grade === 'M' ? 'Delito Menor' : 'Infracción Administrativa');
+            
+            if (selBadge) {
+                selBadge.className = `badge ${badgeClass}`;
+                selBadge.textContent = gradeLabel;
+            }
+            selName.textContent = `${c.article_id}. ${c.name}`;
+            selDesc.textContent = c.description;
+            selContainer.style.display = 'block';
+        }
+        
+        // Populate inputs with parsed default values
+        document.getElementById('crime-fine').value = c.fine_max;
+        document.getElementById('crime-jail').value = c.jail_time;
+        
+        // Hide list and clean search
+        const resultsDiv = document.getElementById('crime-search-results');
+        if (resultsDiv) resultsDiv.style.display = 'none';
+        const searchInp = document.getElementById('crime-search-input');
+        if (searchInp) searchInp.value = '';
+    }
+
+    window.clearSelectedCrime = function() {
+        document.getElementById('crime-type').value = '';
+        const selContainer = document.getElementById('selected-crime-container');
+        if (selContainer) selContainer.style.display = 'none';
+        document.getElementById('crime-fine').value = 0;
+        document.getElementById('crime-jail').value = 0;
     }
 
     async function saveCrime() {
