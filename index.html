@@ -1456,8 +1456,8 @@
                 <!-- SSC -->
                 <div class="sidebar-section-label" id="sb-label-ssc">Ciudadanos</div>
                 <button class="sidebar-btn active" id="sb-ssc" onclick="switchTab('ssc')">
-                    <span class="sb-icon"><i class="fa-solid fa-address-book"></i></span>
-                    <span>Consultar Ciudadanos (SSC)</span>
+                    <span class="sb-icon"><i class="fa-solid fa-database"></i></span>
+                    <span>Data de Ciudadanos</span>
                 </button>
                 <button class="sidebar-btn" id="sb-solvency" onclick="switchTab('solvency')">
                     <span class="sb-icon"><i class="fa-solid fa-chart-pie"></i></span>
@@ -1743,8 +1743,8 @@
                 <!-- TAB: SSC — PADRÓN CIUDADANO -->
                 <div id="tab-ssc" class="tab-content active">
                     <div class="page-header">
-                        <h2><i class="fa-solid fa-address-book" style="color:var(--gov-blue);"></i> Consultar Ciudadanos (SSC)</h2>
-                        <p>Sistema de Solvencia Ciudadana — Registro completo de la población de San Andreas</p>
+                        <h2><i class="fa-solid fa-database" style="color:var(--gov-blue);"></i> Data de Ciudadanos</h2>
+                        <p>Registro civil oficial — Padrón completo de ciudadanos del Estado de San Andreas. Los entes públicos autorizados pueden registrar y consultar perfiles ciudadanos aquí.</p>
                     </div>
                     <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
                         <input type="text" id="citizen-search" class="form-control" placeholder="Buscar por nombre o ID..." style="max-width:320px;" oninput="renderCitizenTable()">
@@ -4589,9 +4589,19 @@
     function isJudge() { return getRole() === 'juez'; }
     function isBanco() { return getRole() === 'banco recsa'; }
     function isInspector() { return getRole().includes('inspector') || getRole().includes('admin'); }
-    function canEditCitizens() { return isGov() || isInspector(); }
+    // canEditCitizens: quién puede agregar/editar ciudadanos en el padrón
+    function canEditCitizens() { return isGov() || isPolice() || isInspector(); }
+    // canDeleteCitizen: solo el Gobernador puede eliminar un ciudadano del padrón
+    function canDeleteCitizen() { return isGov(); }
+    // canSeeMDC: quién tiene acceso al MDC (historial criminal)
     function canSeeMDC() { return isGov() || isPolice() || isJudge() || isInspector(); }
-    function canSeeJudicial() { return isGov() || isJudge(); }
+    // canAddCriminalRecord: quién puede registrar antecedentes
+    function canAddCriminalRecord() { return isGov() || isPolice() || isJudge(); }
+    // canDeleteCriminalRecord: solo el Gobernador puede eliminar antecedentes del sistema
+    function canDeleteCriminalRecord() { return isGov(); }
+    // canSeeJudicial: quién puede ver las órdenes judiciales (policía puede verlas para ejecutarlas)
+    function canSeeJudicial() { return isGov() || isJudge() || isPolice(); }
+    // canApproveJudicial: solo el Juez y el Gobernador pueden aprobar/rechazar órdenes
     function canApproveJudicial() { return isGov() || isJudge(); }
     function canSeeLoansMgmt() { return isGov() || isInspector() || isBanco(); }
     function canManagePortal() { return isGov() || isInspector(); }
@@ -4649,7 +4659,7 @@
 
             show('sb-label-ssc', true);
             show('sb-ssc', true);
-            show('sb-solvency', canEditCitizens() || isGov());
+            show('sb-solvency', canSeeMDC()); // Reporte de Solvencia visible a todos los entes autorizados
             show('sb-label-police', canSeeMDC());
             show('sb-mdc', canSeeMDC());
             show('sb-warrants', canSeeMDC() || canSeeJudicial());
@@ -4836,7 +4846,7 @@
             <h4 style="margin-bottom:12px;color:var(--gov-navy);font-weight:800;">Historial Criminal (${crimes.length} registro${crimes.length !== 1?'s':''})</h4>
             ${crimes.length > 0 ? `
             <div class="card"><div class="table-wrap"><table>
-                <thead><tr><th>Delito</th><th>Multa</th><th>Cárcel</th><th>Oficial</th><th>Estado</th><th>Fecha</th>${canSeeMDC() ? '<th></th>':''}</tr></thead>
+                <thead><tr><th>Delito</th><th>Multa</th><th>Cárcel</th><th>Oficial</th><th>Estado</th><th>Fecha</th>${canDeleteCriminalRecord() ? '<th></th>':''}</tr></thead>
                 <tbody>${crimes.map(r=>`<tr>
                     <td><strong>${r.crime}</strong>${r.notes?`<div style="font-size:0.75rem;color:var(--gov-muted);">${r.notes}</div>`:''}</td>
                     <td style="color:var(--status-red);font-weight:700;">$${Number(r.fine||0).toLocaleString()}</td>
@@ -4844,12 +4854,12 @@
                     <td>${r.officer}</td>
                     <td><span class="badge badge-blue">${r.status}</span></td>
                     <td>${r.date}</td>
-                    ${isGov()||isInspector()?`<td><button class="btn btn-danger btn-xs" onclick="deleteCrime(${r.id})"><i class="fa-solid fa-trash"></i></button></td>`:'<td></td>'}
+                    ${canDeleteCriminalRecord()?`<td><button class="btn btn-danger btn-xs" onclick="deleteCrime(${r.id})"><i class="fa-solid fa-trash"></i></button></td>`:'<td></td>'}
                 </tr>`).join('')}</tbody>
             </table></div></div>` : `<p style="color:var(--gov-muted);font-size:0.875rem;"><i class="fa-solid fa-circle-check" style="color:var(--status-green);"></i> Sin antecedentes criminales.</p>`}
-            ${canSeeMDC() ? `<div style="margin-top:12px;display:flex;gap:10px;">
-                <button class="btn btn-danger btn-sm" onclick="openCrimeModal(${c.id}, '${c.name.replace(/'/g,'\\\'')}')" ><i class="fa-solid fa-circle-plus"></i> Registrar Antecedente</button>
-                <button class="btn btn-ghost btn-sm" onclick="openWarrantModal(${c.id}, '${c.name.replace(/'/g,'\\\'')}')" ><i class="fa-solid fa-gavel"></i> Solicitar Orden Judicial</button>
+            ${canAddCriminalRecord() || canSeeJudicial() ? `<div style="margin-top:12px;display:flex;gap:10px;">
+                ${canAddCriminalRecord() ? `<button class="btn btn-danger btn-sm" onclick="openCrimeModal(${c.id}, '${c.name.replace(/'/g,'\\\'')}')" ><i class="fa-solid fa-circle-plus"></i> Registrar Antecedente</button>` : ''}
+                ${canSeeJudicial() ? `<button class="btn btn-ghost btn-sm" onclick="openWarrantModal(${c.id}, '${c.name.replace(/'/g,'\\\'')}')" ><i class="fa-solid fa-gavel"></i> Solicitar Orden Judicial</button>` : ''}
             </div>` : ''}
             ` : ''}
         `;
@@ -5083,8 +5093,8 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:8px;">
-                        ${canSeeMDC() ? `<button class="btn btn-danger btn-sm" onclick="openCrimeModal(${c.id},'${c.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-circle-plus"></i> Registrar</button>` : ''}
-                        ${canSeeMDC() ? `<button class="btn btn-sm" style="background:rgba(201,162,39,0.2);color:var(--gov-gold);border:1px solid var(--gov-gold);" onclick="openWarrantModal(${c.id},'${c.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-gavel"></i> Solicitar Orden</button>` : ''}
+                        ${canAddCriminalRecord() ? `<button class="btn btn-danger btn-sm" onclick="openCrimeModal(${c.id},'${c.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-circle-plus"></i> Registrar</button>` : ''}
+                        ${canSeeJudicial() ? `<button class="btn btn-sm" style="background:rgba(201,162,39,0.2);color:var(--gov-gold);border:1px solid var(--gov-gold);" onclick="openWarrantModal(${c.id},'${c.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-gavel"></i> Solicitar Orden</button>` : ''}
                     </div>
                 </div>
                 <div class="card-body">
@@ -5100,7 +5110,7 @@
                     <h4 style="margin-bottom:12px;color:var(--gov-navy);font-weight:800;"><i class="fa-solid fa-file-lines"></i> Historial Criminal</h4>
                     ${crimes.length > 0 ? `
                     <div class="table-wrap">
-                    <table><thead><tr><th>Delito</th><th>Multa</th><th>Cárcel</th><th>Oficial</th><th>Estado</th><th>Fecha</th>${isGov()||isInspector()?'<th></th>':''}</tr></thead>
+                    <table><thead><tr><th>Delito</th><th>Multa</th><th>Cárcel</th><th>Oficial</th><th>Estado</th><th>Fecha</th>${canDeleteCriminalRecord()?'<th></th>':''}</tr></thead>
                     <tbody>${crimes.map(r=>`<tr>
                         <td><strong>${r.crime}</strong>${r.notes?`<div style="font-size:0.72rem;color:var(--gov-muted);">${r.notes}</div>`:''}</td>
                         <td style="color:var(--status-red);font-weight:700;">$${Number(r.fine||0).toLocaleString()}</td>
@@ -5108,7 +5118,7 @@
                         <td>${r.officer}</td>
                         <td><span class="badge badge-blue">${r.status}</span></td>
                         <td>${r.date}</td>
-                        ${isGov()||isInspector()?`<td><button class="btn btn-danger btn-xs" onclick="deleteCrime(${r.id})"><i class="fa-solid fa-trash"></i></button></td>`:'<td></td>'}
+                        ${canDeleteCriminalRecord()?`<td><button class="btn btn-danger btn-xs" onclick="deleteCrime(${r.id})"><i class="fa-solid fa-trash"></i></button></td>`:'<td></td>'}
                     </tr>`).join('')}</tbody></table></div>` : `<p style="color:var(--status-green);font-size:0.875rem;"><i class="fa-solid fa-circle-check"></i> Sin antecedentes penales registrados.</p>`}
 
                     ${warrants.length > 0 ? `

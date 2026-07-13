@@ -280,19 +280,8 @@ async function initDb() {
       `);
     }
 
-    // Seed citizens if empty
-    const citizenCheck = await client.query("SELECT COUNT(*) FROM recsa_citizens");
-    if (parseInt(citizenCheck.rows[0].count) === 0) {
-      console.log('Sembrando ciudadanos de prueba en base de datos...');
-      await client.query(`
-        INSERT INTO recsa_citizens (id, name, veraz, job, phone, bank, fines, loan_limit, police_status, nu, weapon_license, driver_license)
-        VALUES 
-        (1001, 'Franklin Clinton', 'Verde', 'Conductor de grúa / Emprendedor', '555-0100', '$45,000', 0, 50000, 'Limpio', 'SA-1001-F', 'SI — Portación', 'SI — Automóvil'),
-        (1002, 'Trevor Philips', 'Rojo', 'Presidente de Trevor Philips Industries', '555-0199', '$3,500', 8500, 5000, 'Buscado', 'SA-1002-T', 'REVOCADA', 'NO'),
-        (1003, 'Lamar Davis', 'Naranja', 'Empleado de Premium Deluxe Motorsport', '555-0144', '$850', 1200, 15000, 'Investigado', 'SA-1003-L', 'SI — Tenencia', 'SI — Automóvil'),
-        (1004, 'Lester Crest', 'Verde', 'Consultor en informática', '555-0155', '$2,500,000', 0, 500000, 'Limpio', 'SA-1004-C', 'NO', 'SI — Automóvil')
-      `);
-    }
+    // NOTE: No citizen seeds — citizens are managed exclusively via the admin panel ("Data de Ciudadanos").
+    // Deleted citizens will NOT reappear after server restarts.
 
     await recalculateAllCitizensRisk(client);
 
