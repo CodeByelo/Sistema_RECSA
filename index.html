@@ -891,22 +891,17 @@
             <div id="crime-citizen-info" style="background:var(--gov-off);border-radius:8px;padding:12px;margin-bottom:16px;font-weight:700;color:var(--gov-navy);"></div>
             <input type="hidden" id="crime-citizen-id">
             
-            <div class="form-group" style="position:relative;">
+            <div class="form-group" style="position:relative; margin-bottom:16px;">
                 <label class="form-label">Buscar Delito / Cargo del Código Penal *</label>
                 <input type="text" id="crime-search-input" class="form-control" placeholder="🔍 Escribe nombre o número de artículo (ej. Robo, Homicidio, 2101...)" oninput="filterPenalCodeCrimes()">
                 <div id="crime-search-results" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--gov-border); border-radius: 6px; margin-top: 8px; background: #070707; display: none; padding: 4px; z-index: 100;">
                 </div>
             </div>
             
-            <!-- Delito seleccionado dinámicamente -->
-            <div class="form-group" id="selected-crime-container" style="display: none; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                    <div style="flex:1;">
-                        <span id="selected-crime-badge" class="badge"></span>
-                        <h4 id="selected-crime-name" style="margin: 6px 0 4px 0; color: var(--gov-navy); font-weight: bold; font-size: 0.95rem;"></h4>
-                        <p id="selected-crime-desc" style="font-size: 0.72rem; color: var(--gov-muted); margin: 0; line-height: 1.4;"></p>
-                    </div>
-                    <button class="btn btn-ghost btn-xs" onclick="clearSelectedCrime()" style="color: var(--status-red); font-size: 0.7rem; padding: 4px 8px; border: 1px solid rgba(239, 68, 68, 0.2);"><i class="fa-solid fa-trash"></i> Quitar</button>
+            <!-- Lista de delitos seleccionados dinámicamente -->
+            <div class="form-group" id="selected-crimes-container" style="display: none; background: rgba(59, 130, 246, 0.03); border: 1px solid var(--gov-border); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+                <label class="form-label" style="color:var(--gov-gold); font-size:0.75rem; margin-bottom:8px; display:block; font-weight:700;">Cargos Seleccionados (Acumulativos):</label>
+                <div id="selected-crimes-list" style="display:flex; flex-direction:column; gap:8px;">
                 </div>
             </div>
             
@@ -1338,7 +1333,7 @@
                 <!-- IT TEAM SIGMA CODE BUTTON -->
                 <button class="sidebar-btn" id="sb-sigma-code-btn" onclick="loadSigmaCode(); document.getElementById('sigma-code-panel').style.display='flex';" style="display:none; color:#33ff33; border-top:1px solid var(--gov-border); margin-top:8px; padding-top:10px;">
                     <span class="sb-icon"><i class="fa-solid fa-lock-open"></i></span>
-                    <span>🔐 Código SIGMA-7</span>
+                    <span>Código SIGMA-7</span>
                 </button>
                 <!-- WITNESS PROTECTION SIDEBAR BUTTON -->
                 <button class="sidebar-btn" id="sb-witness-protection" onclick="switchTab('witness-protection')" style="display:none; color:#ff3366;">
@@ -4798,6 +4793,8 @@
     // ============================================================
     // CRIMINAL RECORDS
     // ============================================================
+    let selectedCrimesForRecord = [];
+
     function openCrimeModal(citizenId, citizenName) {
         document.getElementById('crime-citizen-id').value = citizenId;
         document.getElementById('crime-citizen-info').textContent = `Ciudadano: ${citizenName} (ID: ${citizenId})`;
@@ -4806,14 +4803,13 @@
         document.getElementById('crime-jail').value = 0;
         document.getElementById('crime-notes').value = '';
         
-        // Reset custom search inputs
+        selectedCrimesForRecord = [];
         const searchInp = document.getElementById('crime-search-input');
         if (searchInp) searchInp.value = '';
         const resultsDiv = document.getElementById('crime-search-results');
         if (resultsDiv) { resultsDiv.innerHTML = ''; resultsDiv.style.display = 'none'; }
-        const selContainer = document.getElementById('selected-crime-container');
-        if (selContainer) selContainer.style.display = 'none';
         
+        updateSelectedCrimesUI();
         openModal('modal-crime');
     }
 
@@ -4833,7 +4829,7 @@
             String(c.article_id).includes(query) || 
             c.name.toLowerCase().includes(query) || 
             c.description.toLowerCase().includes(query)
-        ).slice(0, 10); // Limit to top 10 matches for neatness
+        ).slice(0, 10);
         
         if (matches.length === 0) {
             resultsDiv.innerHTML = '<div style="color:#555;padding:8px;font-size:0.75rem;text-align:center;">Ningún cargo penal coincide.</div>';
@@ -4871,44 +4867,73 @@
         const c = PENAL_CODE_CRIMES.find(x => x.article_id === articleId);
         if (!c) return;
         
-        document.getElementById('crime-type').value = `${c.article_id}. ${c.name}`;
-        
-        // Show selected crime info container
-        const selContainer = document.getElementById('selected-crime-container');
-        const selBadge = document.getElementById('selected-crime-badge');
-        const selName = document.getElementById('selected-crime-name');
-        const selDesc = document.getElementById('selected-crime-desc');
-        
-        if (selContainer && selName && selDesc) {
-            const badgeClass = c.grade === 'G' ? 'badge-red' : (c.grade === 'M' ? 'badge-orange' : 'badge-green');
-            const gradeLabel = c.grade === 'G' ? 'Delito Grave' : (c.grade === 'M' ? 'Delito Menor' : 'Infracción Administrativa');
-            
-            if (selBadge) {
-                selBadge.className = `badge ${badgeClass}`;
-                selBadge.textContent = gradeLabel;
-            }
-            selName.textContent = `${c.article_id}. ${c.name}`;
-            selDesc.textContent = c.description;
-            selContainer.style.display = 'block';
+        if (selectedCrimesForRecord.some(x => x.article_id === articleId)) {
+            showToast('Aviso', 'Este cargo ya está seleccionado.', 'warning');
+            return;
         }
         
-        // Populate inputs with parsed default values
-        document.getElementById('crime-fine').value = c.fine_max;
-        document.getElementById('crime-jail').value = c.jail_time;
+        selectedCrimesForRecord.push(c);
         
-        // Hide list and clean search
         const resultsDiv = document.getElementById('crime-search-results');
         if (resultsDiv) resultsDiv.style.display = 'none';
         const searchInp = document.getElementById('crime-search-input');
         if (searchInp) searchInp.value = '';
+        
+        updateSelectedCrimesUI();
     }
 
-    window.clearSelectedCrime = function() {
-        document.getElementById('crime-type').value = '';
-        const selContainer = document.getElementById('selected-crime-container');
-        if (selContainer) selContainer.style.display = 'none';
-        document.getElementById('crime-fine').value = 0;
-        document.getElementById('crime-jail').value = 0;
+    window.removeSelectedCrime = function(idx) {
+        selectedCrimesForRecord.splice(idx, 1);
+        updateSelectedCrimesUI();
+    }
+
+    function updateSelectedCrimesUI() {
+        const container = document.getElementById('selected-crimes-container');
+        const listDiv = document.getElementById('selected-crimes-list');
+        if (!container || !listDiv) return;
+        
+        if (selectedCrimesForRecord.length === 0) {
+            container.style.display = 'none';
+            document.getElementById('crime-type').value = '';
+            document.getElementById('crime-fine').value = 0;
+            document.getElementById('crime-jail').value = 0;
+            return;
+        }
+        
+        container.style.display = 'block';
+        
+        listDiv.innerHTML = selectedCrimesForRecord.map((c, idx) => {
+            const badgeClass = c.grade === 'G' ? 'badge-red' : (c.grade === 'M' ? 'badge-orange' : 'badge-green');
+            const gradeLabel = c.grade === 'G' ? 'Grave' : (c.grade === 'M' ? 'Menor' : 'Infracción');
+            const penaltyText = [
+                c.jail_time > 0 ? `${c.jail_time} min` : null,
+                c.fine_max > 0 ? `$${c.fine_max.toLocaleString()}` : null
+            ].filter(Boolean).join(' | ');
+            
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#070707; border:1px solid #1a1a1a; padding:10px 12px; border-radius:6px; gap:10px; margin-bottom: 4px;">
+                <div style="flex:1; text-align: left;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span class="badge ${badgeClass}" style="font-size:0.65rem; padding:1px 5px;">${gradeLabel}</span>
+                        <strong style="font-size:0.825rem; color:#fff;">${c.article_id}. ${c.name}</strong>
+                    </div>
+                    <div style="font-size:0.68rem; color:var(--gov-muted); margin-top:3px; line-height:1.3;">${c.description}</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                    <span style="font-size:0.75rem; color:#10b981; font-weight:bold;">${penaltyText || 'Sin sanción física'}</span>
+                    <button type="button" class="btn btn-ghost btn-xs" onclick="removeSelectedCrime(${idx})" style="color:var(--status-red); font-size:0.68rem; padding:2px 6px; border:1px solid rgba(239,68,68,0.15); margin:0;"><i class="fa-solid fa-xmark"></i> Quitar</button>
+                </div>
+            </div>
+            `;
+        }).join('');
+        
+        const totalJail = selectedCrimesForRecord.reduce((sum, c) => sum + (c.jail_time || 0), 0);
+        const totalFine = selectedCrimesForRecord.reduce((sum, c) => sum + (c.fine_max || 0), 0);
+        
+        document.getElementById('crime-jail').value = totalJail;
+        document.getElementById('crime-fine').value = totalFine;
+        
+        document.getElementById('crime-type').value = selectedCrimesForRecord.map(c => `${c.article_id}. ${c.name}`).join(', ');
     }
 
     async function saveCrime() {
@@ -6363,7 +6388,12 @@
         </div>
         <div style="padding:24px;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
-                <div style="width:40px;height:40px;background:#1a0000;border:2px solid #ff4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🔐</div>
+                <div style="width:40px;height:40px;background:#1a0000;border:2px solid #ff4444;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
                 <div>
                     <p style="color:#ff4444; font-size:0.85rem; font-weight:700; margin:0 0 4px 0;">CLAVE DE ACCESO CLASIFICADA — SIGMA-7</p>
                     <p style="color:#555; font-size:0.72rem; margin:0; line-height:1.4;">Esta capa de seguridad requiere un código de acceso rotativo emitido exclusivamente al <span style="color:#ffaa00;">Equipo Informático Gubernamental</span>. Los códigos cambian cada 24h. Para obtenerlo, un operador autorizado debe ser <span style="color:#ff4444;">interceptado</span>.</p>
@@ -6451,7 +6481,13 @@
     <div style="background:#0d0d0d; border:1px solid #1f1f1f; border-radius:12px; padding:30px; width:500px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.8);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <div>
-                <div style="color:#e2e8f0; font-size:1rem; font-weight:700;">🔐 Panel SIGMA-7 — Equipo Informático</div>
+                <div style="color:#e2e8f0; font-size:1rem; font-weight:700; display:flex; align-items:center; gap:8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#33ff33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Panel SIGMA-7 — Equipo Informático
+                </div>
                 <div style="color:#64748b; font-size:0.75rem; margin-top:2px;">Código de acceso al sistema clasificado (confidencial)</div>
             </div>
             <button onclick="document.getElementById('sigma-code-panel').style.display='none'" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:1.2rem;">✕</button>
