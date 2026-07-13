@@ -894,13 +894,13 @@
             <div class="form-group" style="position:relative; margin-bottom:16px;">
                 <label class="form-label">Buscar Delito / Cargo del Código Penal *</label>
                 <input type="text" id="crime-search-input" class="form-control" placeholder="Escribe nombre o número de artículo (ej. Robo, Homicidio, 2101...)" oninput="filterPenalCodeCrimes()">
-                <div id="crime-search-results" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--gov-border); border-radius: 6px; margin-top: 8px; background: #070707; display: none; padding: 4px; z-index: 100;">
+                <div id="crime-search-results" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--gov-border); border-radius: 6px; margin-top: 8px; background: #ffffff; display: none; padding: 4px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: absolute; left: 0; right: 0;">
                 </div>
             </div>
             
             <!-- Lista de delitos seleccionados dinámicamente -->
-            <div class="form-group" id="selected-crimes-container" style="display: none; background: rgba(59, 130, 246, 0.03); border: 1px solid var(--gov-border); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-                <label class="form-label" style="color:var(--gov-gold); font-size:0.75rem; margin-bottom:8px; display:block; font-weight:700;">Cargos Seleccionados (Acumulativos):</label>
+            <div class="form-group" id="selected-crimes-container" style="display: none; background: #f8fafc; border: 1px solid var(--gov-border); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                <label class="form-label" style="color:var(--gov-navy); font-size:0.75rem; margin-bottom:10px; display:block; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">Cargos Seleccionados (Acumulativos):</label>
                 <div id="selected-crimes-list" style="display:flex; flex-direction:column; gap:8px;">
                 </div>
             </div>
