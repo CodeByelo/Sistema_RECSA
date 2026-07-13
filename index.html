@@ -4246,7 +4246,7 @@
         if (!currentUser) return '';
         return (currentUser.username || '').toLowerCase();
     }
-    function isGov() { return getRole() === 'gobernador' || getUsername() === 'gobernadorh'; }
+    function isGov() { return getRole() === 'gobernador'; }
     function isPolice() { return getRole() === 'lspd' || getRole() === 'lssd'; }
     function isJudge() { return getRole() === 'juez'; }
     function isBanco() { return getRole() === 'banco recsa'; }
@@ -5316,7 +5316,7 @@
                 <td>${u.department || '—'}</td>
                 <td style="font-size:0.75rem;color:var(--gov-muted);">${u.last_login ? new Date(u.last_login).toLocaleString('es-ES') : 'Nunca'}</td>
                 <td>
-                    ${u.username.toLowerCase() !== 'gobernadorh' ? `<button class="btn btn-danger btn-xs" onclick="deleteUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-minus"></i> Revocar</button>` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Protegido</span>'}
+                    ${u.username.toLowerCase() !== currentUser.username.toLowerCase() ? `<button class="btn btn-danger btn-xs" onclick="deleteUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-minus"></i> Revocar</button>` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Sesión Activa</span>'}
                 </td>
             </tr>
         `).join('');
