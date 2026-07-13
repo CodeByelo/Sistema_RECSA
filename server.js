@@ -35,7 +35,7 @@ async function initDb() {
       CREATE TABLE IF NOT EXISTS recsa_citizens (
         id INTEGER PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        veraz VARCHAR(50) DEFAULT 'Verde',
+        veraz VARCHAR(50) DEFAULT 'Naranja',
         job VARCHAR(255),
         phone VARCHAR(50),
         bank VARCHAR(50) DEFAULT '$0',
@@ -87,7 +87,8 @@ async function initDb() {
         interest NUMERIC NOT NULL,
         status VARCHAR(50) DEFAULT 'Pendiente',
         approved_by VARCHAR(255),
-        date VARCHAR(50) NOT NULL
+        date VARCHAR(50) NOT NULL,
+        reason TEXT
       );
     `);
 
@@ -156,6 +157,71 @@ async function initDb() {
       );
     `);
 
+    // 9. Role Requests (NEW)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recsa_role_requests (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES recsa_users(id) ON DELETE CASCADE,
+        username VARCHAR(255) NOT NULL,
+        citizen_name VARCHAR(255) NOT NULL,
+        requested_role VARCHAR(255) NOT NULL,
+        requested_badge VARCHAR(100),
+        requested_department VARCHAR(255),
+        justification TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'Pendiente',
+        created_at TIMESTAMP DEFAULT NOW(),
+        resolved_by VARCHAR(255),
+        resolved_at TIMESTAMP
+      );
+    `);
+
+    // 10. Citizen Reports & Procedures (NEW)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recsa_citizen_reports (
+        id SERIAL PRIMARY KEY,
+        citizen_id INTEGER REFERENCES recsa_citizens(id) ON DELETE CASCADE,
+        citizen_name VARCHAR(255) NOT NULL,
+        type VARCHAR(100) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'Pendiente',
+        created_at TIMESTAMP DEFAULT NOW(),
+        resolved_by VARCHAR(255),
+        resolution_notes TEXT
+      );
+    `);
+
+    // 11. Sigma Codes (rotating access keys for IT team)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recsa_sigma_codes (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(20) NOT NULL,
+        generated_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP NOT NULL,
+        generated_by VARCHAR(255) NOT NULL,
+        active BOOLEAN DEFAULT TRUE
+      );
+    `);
+
+    // 12. Witness Protection (NEW)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recsa_witness_protection (
+        id SERIAL PRIMARY KEY,
+        witness_name VARCHAR(255) NOT NULL,
+        alias VARCHAR(255) NOT NULL,
+        safehouse_location VARCHAR(255) NOT NULL,
+        assigned_officers VARCHAR(255),
+        status VARCHAR(100) DEFAULT 'Bajo Resguardo',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Migraciones: Añadir columna reason si no existe
+    await client.query(`
+      ALTER TABLE recsa_loan_requests ADD COLUMN IF NOT EXISTS reason TEXT;
+    `);
+
     console.log('Tablas creadas/verificadas correctamente.');
 
     // Seed GobernadorH if users table is empty
@@ -193,11 +259,138 @@ async function initDb() {
       await pool.query(`INSERT INTO recsa_config (key, value) VALUES ('landing_config', $1)`, [JSON.stringify(defaultConfig)]);
     }
 
+    // Seed witness compromised config if empty
+    const witnessCompCheck = await client.query("SELECT COUNT(*) FROM recsa_config WHERE key = 'witness_compromised'");
+    if (parseInt(witnessCompCheck.rows[0].count) === 0) {
+      console.log('Sembrando configuración de brecha de testigos...');
+      const defaultWitnessComp = { compromised: false, timestamp: null, detail: null };
+      await pool.query(`INSERT INTO recsa_config (key, value) VALUES ('witness_compromised', $1)`, [JSON.stringify(defaultWitnessComp)]);
+    }
+
+    // Seed witness protection if empty
+    const witnessCheck = await client.query("SELECT COUNT(*) FROM recsa_witness_protection");
+    if (parseInt(witnessCheck.rows[0].count) === 0) {
+      console.log('Sembrando testigos protegidos iniciales...');
+      await client.query(`
+        INSERT INTO recsa_witness_protection (witness_name, alias, safehouse_location, assigned_officers, status, notes)
+        VALUES 
+        ('Michael De Santa', 'Albert De Silva', 'Mansión Banham Canyon Rd', 'Agente Dave Norton (FIB)', 'Bajo Resguardo', 'Testigo clave contra la mafia de Devin Weston.'),
+        ('Karen Drake', 'T-100', 'Apartamento 3B - El Burro Heights', 'Oficial Jones (LSPD)', 'Seguridad Media', 'Proporcionó información sobre el cartel de Madrazo.'),
+        ('Brad Snider', 'BradS', 'Cementerio de Ludendorff (Fingido)', 'Agente Steve Haines (FIB)', 'Reubicado', 'Simulación de muerte para cobertura de testigo.')
+      `);
+    }
+
+    await recalculateAllCitizensRisk(client);
+
+    // Seed initial SIGMA-7 access code if none exists
+    const codeCheck = await client.query('SELECT COUNT(*) FROM recsa_sigma_codes WHERE active = TRUE');
+    if (parseInt(codeCheck.rows[0].count) === 0) {
+      const firstCode = generateSigmaCode();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await client.query(
+        'INSERT INTO recsa_sigma_codes (code, expires_at, generated_by, active) VALUES ($1, $2, $3, TRUE)',
+        [firstCode, expiresAt, 'SISTEMA-INICIAL']
+      );
+      console.log(`[SIGMA] Código inicial generado: ${firstCode}`);
+    }
+
     console.log('Sistema RECSA v4.0 inicializado con éxito.');
   } catch (error) {
     console.error('Error durante la inicialización:', error.message);
   } finally {
     client.release();
+  }
+}
+
+// ============================================================
+// SIGMA-7 ACCESS CODE SYSTEM (IT TEAM ROTATING KEYS)
+// ============================================================
+function generateSigmaCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'SIG-';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  code += '-';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code; // e.g. SIG-K7XM-NP4Q
+}
+
+async function rotateSigmaCode(requestedBy = 'SISTEMA') {
+  try {
+    await pool.query('UPDATE recsa_sigma_codes SET active = FALSE WHERE active = TRUE');
+    const newCode = generateSigmaCode();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    await pool.query(
+      'INSERT INTO recsa_sigma_codes (code, expires_at, generated_by, active) VALUES ($1, $2, $3, TRUE)',
+      [newCode, expiresAt, requestedBy]
+    );
+    console.log(`[SIGMA] Nuevo código generado: ${newCode} — Válido hasta: ${expiresAt.toISOString()}`);
+    return newCode;
+  } catch (err) {
+    console.error('[SIGMA] Error rotando código:', err.message);
+    return null;
+  }
+}
+
+// Auto-rotate every 24 hours
+setInterval(() => rotateSigmaCode('AUTO-SISTEMA'), 24 * 60 * 60 * 1000);
+
+// ============================================================
+// AUTOMATIC CITIZEN RISK CALCULATION (SSC)
+// ============================================================
+async function autoCalculateCitizenRisk(db, citizenId) {
+  try {
+    const citizenRes = await db.query('SELECT * FROM recsa_citizens WHERE id = $1', [citizenId]);
+    if (citizenRes.rows.length === 0) return;
+    const c = citizenRes.rows[0];
+
+    const recordsRes = await db.query('SELECT * FROM recsa_criminal_records WHERE citizen_id = $1', [citizenId]);
+    const records = recordsRes.rows;
+
+    const loansRes = await db.query('SELECT * FROM recsa_loan_requests WHERE citizen_id = $1', [citizenId]);
+    const loans = loansRes.rows;
+
+    let newVeraz = 'Verde'; // Default: safe & normal status
+
+    const finesVal = parseFloat((c.fines || '').replace(/[^0-9.-]+/g, '')) || 0;
+    const bankVal = parseFloat((c.bank || '').replace(/[^0-9.-]+/g, '')) || 0;
+    const isWanted = ['buscado', 'prófugo', 'arrestado'].includes((c.police_status || '').toLowerCase());
+    const hasApprovedLoans = loans.some(l => l.status === 'Aprobado');
+
+    // Risk rules logic:
+    if (isWanted) {
+      newVeraz = 'Rojo';
+    } else if (finesVal > 10000) {
+      newVeraz = 'Rojo';
+    } else if (records.length >= 3) {
+      newVeraz = 'Rojo';
+    } else if (hasApprovedLoans && bankVal < 100) {
+      newVeraz = 'Rojo';
+    } else if (finesVal > 0) {
+      newVeraz = 'Naranja';
+    } else if (records.length > 0 && records.length < 3) {
+      newVeraz = 'Naranja';
+    } else if (c.driver_license === 'NO' && records.length > 0) {
+      newVeraz = 'Naranja';
+    }
+
+    if (c.veraz !== newVeraz) {
+      await db.query('UPDATE recsa_citizens SET veraz = $1 WHERE id = $2', [newVeraz, citizenId]);
+      console.log(`[RISK UPDATE] Citizen ${c.name} (${citizenId}): ${c.veraz} -> ${newVeraz}`);
+    }
+  } catch (err) {
+    console.error(`Error calculating citizen risk for ${citizenId}:`, err.message);
+  }
+}
+
+async function recalculateAllCitizensRisk(db) {
+  try {
+    const res = await db.query('SELECT id FROM recsa_citizens');
+    for (const row of res.rows) {
+      await autoCalculateCitizenRisk(db, row.id);
+    }
+    console.log('Recalculación automática de riesgo completada.');
+  } catch (err) {
+    console.error('Error recalculando todos los ciudadanos:', err.message);
   }
 }
 
@@ -244,7 +437,187 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/register', async (req, res) => {
+  const { username, password, name, citizenId } = req.body;
+  if (!username || !password || !name) {
+    return res.status(400).json({ error: 'Completa todos los campos obligatorios.' });
+  }
+  try {
+    const userCheck = await pool.query('SELECT id FROM recsa_users WHERE username = $1', [username]);
+    if (userCheck.rows.length > 0) {
+      return res.status(409).json({ error: 'El nombre de usuario ya está registrado.' });
+    }
+
+    let linkedCitizenId = null;
+    if (citizenId) {
+      const citizenCheck = await pool.query('SELECT id FROM recsa_citizens WHERE id = $1', [citizenId]);
+      if (citizenCheck.rows.length > 0) {
+        linkedCitizenId = citizenCheck.rows[0].id;
+      } else {
+        // Create the citizen with the provided ID since it doesn't exist
+        linkedCitizenId = citizenId;
+        const randomPhone = `555-${Math.floor(1000 + Math.random() * 9000)}`;
+        await pool.query(
+          `INSERT INTO recsa_citizens (id, name, veraz, job, phone, bank, fines, loan_limit, police_status, properties, vehicles, businesses) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [linkedCitizenId, name, 'Naranja', 'Civil', randomPhone, '$15,000', 0, 10000, 'Limpio', '[]', '[]', '[]']
+        );
+      }
+    } else {
+      // Generate a unique ID
+      let idExists = true;
+      while (idExists) {
+        linkedCitizenId = Math.floor(1000 + Math.random() * 9000);
+        const check = await pool.query('SELECT id FROM recsa_citizens WHERE id = $1', [linkedCitizenId]);
+        if (check.rows.length === 0) {
+          idExists = false;
+        }
+      }
+      
+      const randomPhone = `555-${Math.floor(1000 + Math.random() * 9000)}`;
+      await pool.query(
+        `INSERT INTO recsa_citizens (id, name, veraz, job, phone, bank, fines, loan_limit, police_status, properties, vehicles, businesses) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [linkedCitizenId, name, 'Naranja', 'Civil', randomPhone, '$15,000', 0, 10000, 'Limpio', '[]', '[]', '[]']
+      );
+    }
+
+    const result = await pool.query(
+      'INSERT INTO recsa_users (username, password, role, name, citizen_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [username, password, 'Civil', name, linkedCitizenId]
+    );
+
+    await logActivity(username, 'REGISTER', `Registro de civil completado. ID Ciudadano vinculado: ${linkedCitizenId}`);
+    res.json({ success: true, id: result.rows[0].id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============================================================
+// API: SOLICITUDES DE RANGO
+// ============================================================
+app.get('/api/role-requests', async (req, res) => {
+  const { userId } = req.query;
+  try {
+    let result;
+    if (userId) {
+      result = await pool.query('SELECT * FROM recsa_role_requests WHERE user_id = $1 ORDER BY id DESC', [userId]);
+    } else {
+      result = await pool.query('SELECT * FROM recsa_role_requests ORDER BY id DESC');
+    }
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/role-requests', async (req, res) => {
+  const { userId, username, citizenName, requestedRole, requestedBadge, requestedDepartment, justification } = req.body;
+  if (!userId || !username || !requestedRole || !justification) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO recsa_role_requests (user_id, username, citizen_name, requested_role, requested_badge, requested_department, justification)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, username, citizenName || '', requestedRole, requestedBadge || null, requestedDepartment || null, justification]
+    );
+    await logActivity(username, 'ROLE_REQUEST', `Solicitud de rango a ${requestedRole}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/role-requests/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status, resolved_by } = req.body;
+  if (!status || !resolved_by) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  }
+  try {
+    const reqInfo = await pool.query('SELECT * FROM recsa_role_requests WHERE id = $1', [id]);
+    if (reqInfo.rows.length === 0) {
+      return res.status(404).json({ error: 'Solicitud no encontrada.' });
+    }
+    const request = reqInfo.rows[0];
+
+    await pool.query(
+      'UPDATE recsa_role_requests SET status = $1, resolved_by = $2, resolved_at = NOW() WHERE id = $3',
+      [status, resolved_by, id]
+    );
+
+    if (status === 'Aprobada') {
+      await pool.query(
+        'UPDATE recsa_users SET role = $1, badge = $2, department = $3 WHERE id = $4',
+        [request.requested_role, request.requested_badge, request.requested_department, request.user_id]
+      );
+      await logActivity(resolved_by, 'ROLE_REQUEST_APPROVED', `Aprobada solicitud de rango de ${request.username} a ${request.requested_role}`);
+    } else {
+      await logActivity(resolved_by, 'ROLE_REQUEST_REJECTED', `Rechazada solicitud de rango de ${request.username} a ${request.requested_role}`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// API: CITIZEN REPORTS & PROCEDURES
+// ============================================================
+app.get('/api/citizen-reports', async (req, res) => {
+  const { citizenId } = req.query;
+  try {
+    let result;
+    if (citizenId) {
+      result = await pool.query('SELECT * FROM recsa_citizen_reports WHERE citizen_id = $1 ORDER BY id DESC', [citizenId]);
+    } else {
+      result = await pool.query('SELECT * FROM recsa_citizen_reports ORDER BY id DESC');
+    }
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/citizen-reports', async (req, res) => {
+  const { citizenId, citizenName, type, title, description } = req.body;
+  if (!citizenId || !citizenName || !type || !title || !description) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  }
+  try {
+    await pool.query(
+      'INSERT INTO recsa_citizen_reports (citizen_id, citizen_name, type, title, description) VALUES ($1, $2, $3, $4, $5)',
+      [citizenId, citizenName, type, title, description]
+    );
+    await logActivity(citizenName, 'REPORT_SUBMITTED', `Enviado reporte de tipo ${type}: ${title}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/citizen-reports/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status, resolved_by, resolution_notes } = req.body;
+  if (!status || !resolved_by) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  }
+  try {
+    await pool.query(
+      'UPDATE recsa_citizen_reports SET status = $1, resolved_by = $2, resolution_notes = $3 WHERE id = $4',
+      [status, resolved_by, resolution_notes || '', id]
+    );
+    await logActivity(resolved_by, 'REPORT_RESOLVED', `Resuelto reporte ID ${id} como ${status}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
 // API: USUARIOS (Solo Gobernador)
 // ============================================================
 app.get('/api/users', async (req, res) => {
@@ -289,6 +662,42 @@ app.put('/api/users/:id/password', async (req, res) => {
   try {
     await pool.query('UPDATE recsa_users SET password = $1 WHERE id = $2', [password, id]);
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/users/:id/link-citizen', async (req, res) => {
+  const { id } = req.params;
+  const { citizenId, username } = req.body;
+  if (!citizenId) {
+    return res.status(400).json({ error: 'El ID de Ciudadano es requerido.' });
+  }
+  try {
+    const citizenCheck = await pool.query('SELECT name FROM recsa_citizens WHERE id = $1', [citizenId]);
+    if (citizenCheck.rows.length === 0) {
+      // Auto-create citizen profile if it doesn't exist
+      const randomPhone = `555-${Math.floor(1000 + Math.random() * 9000)}`;
+      const userRes = await pool.query('SELECT name FROM recsa_users WHERE id = $1', [id]);
+      const name = userRes.rows.length > 0 ? userRes.rows[0].name : 'Ciudadano Nuevo';
+
+      await pool.query(
+        `INSERT INTO recsa_citizens (id, name, veraz, job, phone, bank, fines, loan_limit, police_status, properties, vehicles, businesses) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [citizenId, name, 'Naranja', 'Civil', randomPhone, '$15,000', 0, 10000, 'Limpio', '[]', '[]', '[]']
+      );
+    } else {
+      const linkCheck = await pool.query('SELECT username FROM recsa_users WHERE citizen_id = $1 AND id != $2', [citizenId, id]);
+      if (linkCheck.rows.length > 0) {
+        return res.status(409).json({ error: `Esa cédula ya está vinculada al usuario: ${linkCheck.rows[0].username}` });
+      }
+    }
+
+    await pool.query('UPDATE recsa_users SET citizen_id = $1 WHERE id = $2', [citizenId, id]);
+    await logActivity(username || 'Sistema', 'LINK_CITIZEN', `Usuario ID ${id} vinculado a ciudadano ID ${citizenId}`);
+    
+    const citizenCheckUpdated = await pool.query('SELECT name FROM recsa_citizens WHERE id = $1', [citizenId]);
+    res.json({ success: true, citizenName: citizenCheckUpdated.rows[0].name });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -352,6 +761,7 @@ app.post('/api/citizens', async (req, res) => {
       JSON.stringify(c.businesses || []), JSON.stringify(c.properties || []),
       JSON.stringify(c.vehicles || []), JSON.stringify(c.payments || [])
     ]);
+    await autoCalculateCitizenRisk(pool, c.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -434,7 +844,7 @@ app.get('/api/loans', async (req, res) => {
     const mapped = result.rows.map(l => ({
       id: l.id, citizenId: l.citizen_id, citizenName: l.citizen_name,
       amount: parseFloat(l.amount), months: l.months, interest: parseFloat(l.interest),
-      status: l.status, approvedBy: l.approved_by, date: l.date
+      status: l.status, approvedBy: l.approved_by, date: l.date, reason: l.reason
     }));
     res.json(mapped);
   } catch (error) {
@@ -447,15 +857,15 @@ app.post('/api/loans', async (req, res) => {
   try {
     if (l.id) {
       await pool.query(`
-        INSERT INTO recsa_loan_requests (id, citizen_id, citizen_name, amount, months, interest, status, approved_by, date)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        INSERT INTO recsa_loan_requests (id, citizen_id, citizen_name, amount, months, interest, status, approved_by, date, reason)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         ON CONFLICT (id) DO UPDATE SET status=EXCLUDED.status, approved_by=EXCLUDED.approved_by
-      `, [l.id, l.citizenId, l.citizenName, l.amount, l.months, l.interest, l.status, l.approvedBy || null, l.date]);
+      `, [l.id, l.citizenId, l.citizenName, l.amount, l.months, l.interest, l.status, l.approvedBy || null, l.date, l.reason || null]);
     } else {
       await pool.query(`
-        INSERT INTO recsa_loan_requests (citizen_id, citizen_name, amount, months, interest, status, date)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
-      `, [l.citizenId, l.citizenName, l.amount, l.months, l.interest, l.status || 'Pendiente', l.date]);
+        INSERT INTO recsa_loan_requests (citizen_id, citizen_name, amount, months, interest, status, date, reason)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `, [l.citizenId, l.citizenName, l.amount, l.months, l.interest, l.status || 'Pendiente', l.date, l.reason || null]);
     }
     res.json({ success: true });
   } catch (error) {
@@ -468,6 +878,10 @@ app.put('/api/loans/:id', async (req, res) => {
   const { status, approved_by } = req.body;
   try {
     await pool.query('UPDATE recsa_loan_requests SET status=$1, approved_by=$2 WHERE id=$3', [status, approved_by, id]);
+    const loanRes = await pool.query('SELECT citizen_id FROM recsa_loan_requests WHERE id = $1', [id]);
+    if (loanRes.rows.length > 0) {
+      await autoCalculateCitizenRisk(pool, loanRes.rows[0].citizen_id);
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -501,6 +915,7 @@ app.post('/api/criminal-records', async (req, res) => {
     if (r.policeStatusUpdate) {
       await pool.query('UPDATE recsa_citizens SET police_status=$1 WHERE id=$2', [r.policeStatusUpdate, r.citizenId]);
     }
+    await autoCalculateCitizenRisk(pool, r.citizenId);
     res.json({ success: true, id: result.rows[0].id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -510,7 +925,12 @@ app.post('/api/criminal-records', async (req, res) => {
 app.delete('/api/criminal-records/:id', async (req, res) => {
   const { id } = req.params;
   try {
+    const recordRes = await pool.query('SELECT citizen_id FROM recsa_criminal_records WHERE id = $1', [id]);
+    const citizenId = recordRes.rows[0]?.citizen_id;
     await pool.query('DELETE FROM recsa_criminal_records WHERE id = $1', [id]);
+    if (citizenId) {
+      await autoCalculateCitizenRisk(pool, citizenId);
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -609,6 +1029,189 @@ app.get('/api/activity-log', async (req, res) => {
   }
 });
 
+// ============================================================
+// API: SIGMA-7 ACCESS CODES (IT TEAM)
+// ============================================================
+
+// GET current active code — only IT team, Gobernador, Policia Jefe
+app.get('/api/sigma-codes/current', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, code, generated_at, expires_at, generated_by FROM recsa_sigma_codes WHERE active = TRUE ORDER BY generated_at DESC LIMIT 1'
+    );
+    if (result.rows.length === 0) {
+      // No active code — generate one
+      const newCode = await rotateSigmaCode('SISTEMA-AUTO');
+      const r2 = await pool.query(
+        'SELECT id, code, generated_at, expires_at, generated_by FROM recsa_sigma_codes WHERE active = TRUE ORDER BY generated_at DESC LIMIT 1'
+      );
+      return res.json(r2.rows[0] || { error: 'No se pudo generar código' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST verify a code — used during bypass attempt
+app.post('/api/sigma-codes/verify', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.json({ valid: false, reason: 'Código vacío' });
+
+    const result = await pool.query(
+      'SELECT * FROM recsa_sigma_codes WHERE active = TRUE AND code = $1 AND expires_at > NOW()',
+      [code.trim().toUpperCase()]
+    );
+    if (result.rows.length > 0) {
+      // Log attempt
+      await pool.query(
+        'INSERT INTO recsa_activity_log (username, action, detail) VALUES ($1, $2, $3)',
+        ['BYPASS_SYSTEM', 'SIGMA_CODE_ACCEPTED', `Código aceptado: ${code}`]
+      );
+      res.json({ valid: true });
+    } else {
+      await pool.query(
+        'INSERT INTO recsa_activity_log (username, action, detail) VALUES ($1, $2, $3)',
+        ['BYPASS_SYSTEM', 'SIGMA_CODE_REJECTED', `Intento fallido con código: ${code}`]
+      );
+      res.json({ valid: false, reason: 'Código inválido o expirado' });
+    }
+  } catch (error) {
+    res.status(500).json({ valid: false, reason: error.message });
+  }
+});
+
+// POST rotate code manually — only Gobernador / equipo_informatico
+app.post('/api/sigma-codes/rotate', async (req, res) => {
+  try {
+    const { requestedBy } = req.body;
+    const newCode = await rotateSigmaCode(requestedBy || 'MANUAL');
+    if (!newCode) return res.status(500).json({ error: 'Error generando código' });
+    const result = await pool.query(
+      'SELECT id, code, generated_at, expires_at, generated_by FROM recsa_sigma_codes WHERE active = TRUE LIMIT 1'
+    );
+    res.json({ success: true, code: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET code history — only Gobernador
+app.get('/api/sigma-codes/history', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, code, generated_at, expires_at, generated_by, active FROM recsa_sigma_codes ORDER BY generated_at DESC LIMIT 30'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// ============================================================
+// API: PROTECCIÓN A TESTIGOS
+// ============================================================
+
+// GET witness compromise status
+app.get('/api/witness-protection/compromise-status', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT value FROM recsa_config WHERE key = 'witness_compromised'");
+    if (result.rows.length === 0) {
+      return res.json({ compromised: false, timestamp: null, detail: null });
+    }
+    res.json(result.rows[0].value);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST reset compromise status (only Governor)
+app.post('/api/witness-protection/reset-compromise', async (req, res) => {
+  try {
+    const defaultVal = { compromised: false, timestamp: null, detail: null };
+    await pool.query(
+      "INSERT INTO recsa_config (key, value) VALUES ('witness_compromised', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      [JSON.stringify(defaultVal)]
+    );
+    // Log resetting action
+    const { user } = req.body;
+    await pool.query(
+      "INSERT INTO recsa_activity_log (username, action, detail) VALUES ($1, $2, $3)",
+      [user || 'Gobernador', 'RESTABLECER_SEGURIDAD_TESTIGOS', 'El Gobernador ha reestablecido la seguridad del módulo y borrado las alertas de intrusión.']
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET witness protection list (triggers compromise if compromisedBy === 'backdoor')
+app.get('/api/witness-protection', async (req, res) => {
+  const { compromisedBy } = req.query;
+  try {
+    if (compromisedBy === 'backdoor') {
+      const timestamp = new Date().toISOString();
+      const breachInfo = {
+        compromised: true,
+        timestamp,
+        detail: 'Acceso no autorizado detectado desde Terminal SIGMA-7 (Bypass Anónimo)'
+      };
+      await pool.query(
+        "INSERT INTO recsa_config (key, value) VALUES ('witness_compromised', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        [JSON.stringify(breachInfo)]
+      );
+      // Log to activity log
+      await pool.query(
+        "INSERT INTO recsa_activity_log (username, action, detail) VALUES ($1, $2, $3)",
+        ['Terminal SIGMA-7', 'BRECHA_SEGURIDAD_TESTIGOS', 'La base de datos de testigos protegidos fue comprometida. Acceso ilegal detectado.']
+      );
+    }
+    const result = await pool.query('SELECT * FROM recsa_witness_protection ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST create witness record
+app.post('/api/witness-protection', async (req, res) => {
+  const { witness_name, alias, safehouse_location, assigned_officers, status, notes } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO recsa_witness_protection (witness_name, alias, safehouse_location, assigned_officers, status, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [witness_name, alias, safehouse_location, assigned_officers, status || 'Bajo Resguardo', notes]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT update witness record
+app.put('/api/witness-protection/:id', async (req, res) => {
+  const { id } = req.params;
+  const { witness_name, alias, safehouse_location, assigned_officers, status, notes } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE recsa_witness_protection SET witness_name=$1, alias=$2, safehouse_location=$3, assigned_officers=$4, status=$5, notes=$6 WHERE id=$7 RETURNING *',
+      [witness_name, alias, safehouse_location, assigned_officers, status, notes, id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE witness record
+app.delete('/api/witness-protection/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM recsa_witness_protection WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // ============================================================
 // API: STATUS
 // ============================================================
