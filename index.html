@@ -187,7 +187,7 @@
         }
         .card-header {
             padding: 20px 24px; border-bottom: 1.5px solid var(--gov-border);
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
             background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(248,250,252,0.8) 100%);
         }
         .card-header h3, .card-header h4 { font-size: 1.05rem; font-weight: 800; color: var(--gov-navy); letter-spacing: -0.2px; }
@@ -583,6 +583,175 @@
         .hack-line-cyan { color: var(--hack-cyan); }
         .hack-line-red { color: var(--hack-red); font-weight: bold; }
         .hack-line-orange { color: var(--hack-orange); }
+
+        /* ========================================================
+           RESPONSIVE GRID LAYOUTS & MEDIA QUERIES
+           ======================================================== */
+        .responsive-grid-2-equal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .responsive-grid-2-split {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 24px;
+        }
+        .responsive-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        .responsive-grid-mdc {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        .responsive-grid-auto-fit-200 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .responsive-grid-auto-fit-160 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+
+        .hack-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--hack-border);
+            border-radius: 6px;
+            background: transparent;
+            margin-bottom: 20px;
+        }
+
+        /* Prevent children in CSS Grid from expanding past column width (fixes table overflow cropping) */
+        .responsive-grid-2-equal > *,
+        .responsive-grid-2-split > *,
+        .responsive-grid-3 > *,
+        .responsive-grid-mdc > *,
+        .responsive-grid-auto-fit-200 > *,
+        .responsive-grid-auto-fit-160 > * {
+            min-width: 0;
+        }
+
+        @media (max-width: 900px) {
+            /* Force grids to act as simple blocks on mobile/narrow layouts */
+            .responsive-grid-2-equal,
+            .responsive-grid-2-split,
+            .responsive-grid-3,
+            .responsive-grid-mdc {
+                display: block !important;
+            }
+            .responsive-grid-2-equal > *,
+            .responsive-grid-2-split > *,
+            .responsive-grid-3 > *,
+            .responsive-grid-mdc > * {
+                width: 100% !important;
+                margin-bottom: 20px;
+            }
+            .responsive-grid-2-equal > *:last-child,
+            .responsive-grid-2-split > *:last-child,
+            .responsive-grid-3 > *:last-child,
+            .responsive-grid-mdc > *:last-child {
+                margin-bottom: 0 !important;
+            }
+            .landing-section {
+                padding: 50px 20px !important;
+            }
+            .landing-header {
+                padding: 0 20px !important;
+            }
+            .intranet-header {
+                padding: 0 16px !important;
+            }
+            .intranet-main {
+                padding: 16px !important;
+                overflow-x: auto !important;
+            }
+            .landing-header-inner {
+                height: auto !important;
+                padding: 12px 0;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .landing-nav {
+                gap: 12px !important;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .dni-card {
+                padding: 16px !important;
+                max-width: 100% !important;
+            }
+            .dni-body {
+                grid-template-columns: 85px 1fr !important;
+                gap: 14px !important;
+            }
+            .dni-photo {
+                width: 85px !important;
+                height: 100px !important;
+            }
+            .dni-name {
+                font-size: 1.1rem !important;
+            }
+            
+            /* Make flex form rows wrap on mobile */
+            .form-row[style*="display:flex"],
+            .form-row[style*="display: flex"] {
+                flex-wrap: wrap !important;
+            }
+            .form-row[style*="display:flex"] > *,
+            .form-row[style*="display: flex"] > * {
+                flex: 1 1 150px !important;
+            }
+            
+            /* Generic flex wrapper wrapping helper */
+            div[style*="display:flex"], 
+            div[style*="display: flex"] {
+                flex-wrap: wrap !important;
+            }
+            
+            /* Intranet pagination wrap */
+            #citizen-pagination-container,
+            #solvency-pagination-container {
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+                justify-content: center !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .intranet-header-inner {
+                height: auto !important;
+                padding: 10px 0;
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+            .intranet-user {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .user-info strong {
+                font-size: 0.8rem !important;
+            }
+            .news-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .hero-section {
+                padding: 80px 20px !important;
+            }
+            .hero-title {
+                font-size: 1.8rem !important;
+            }
+            .hero-stats {
+                gap: 20px !important;
+                margin-top: 30px !important;
+                padding-top: 20px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -591,6 +760,25 @@
 <!-- ============================================================
      MODALES GLOBALES
      ============================================================ -->
+
+<!-- Modal: CONFIRMACIÓN PERSONALIZADA (PREMIUM) -->
+<div id="modal-custom-confirm" class="modal-overlay" style="z-index: 999999;">
+    <div class="modal-box" style="max-width: 440px;">
+        <div class="modal-header" id="confirm-modal-header" style="background: var(--gov-navy); border-radius: 24px 24px 0 0;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <h3 id="confirm-modal-title" style="color:#fff; font-size:0.95rem;">Confirmación</h3>
+            </div>
+        </div>
+        <div class="modal-body" style="padding: 24px;">
+            <p id="confirm-modal-message" style="font-size:0.9rem; line-height:1.6; color:var(--gov-text);"></p>
+            <input type="text" id="confirm-modal-input" class="form-control" style="margin-top:16px; display:none;" autocomplete="off">
+        </div>
+        <div class="modal-footer" style="padding:16px 24px;">
+            <button class="btn btn-ghost" id="confirm-modal-btn-cancel">Cancelar</button>
+            <button class="btn btn-primary" id="confirm-modal-btn-action">Aceptar</button>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: LOGIN -->
 <div id="modal-login" class="modal-overlay">
@@ -696,7 +884,7 @@
                 
                 <hr style="border:none; border-top:1.5px solid var(--gov-border); margin:16px 0;">
                 <div style="font-weight:800; margin-bottom:12px; color:var(--gov-navy); font-size:0.95rem;">Licencias del Estado</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+                <div class="responsive-grid-3" style="margin-bottom:12px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">Lic. Conducir</label>
                         <select id="ecp-driver" class="form-control">
@@ -1355,7 +1543,7 @@
                         <button class="btn btn-primary" onclick="openEditCivilProfileModal()"><i class="fa-solid fa-user-pen"></i> Editar mi Perfil / Licencias</button>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+                    <div class="responsive-grid-2-equal" style="align-items:start;">
                         <!-- Left: DNI Card -->
                         <div style="display:flex; flex-direction:column; gap:20px;">
                             <div class="card-header" style="padding:0; background:none; border:none;"><h3 style="color:var(--gov-navy);font-size:1.1rem;margin-bottom:8px;">Credencial Oficial DNI</h3></div>
@@ -1372,7 +1560,7 @@
                     </div>
 
                     <!-- Bottom: Vehículos, Propiedades e Historial Criminal -->
-                    <div style="margin-top:24px; display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+                    <div class="responsive-grid-2-equal" style="margin-top:24px;">
                         <div class="card">
                             <div class="card-header"><h3>Propiedades, Vehículos y Negocios</h3></div>
                             <div class="card-body" style="font-size:0.875rem;" id="civilian-assets-container">
@@ -1404,7 +1592,7 @@
                         <p>Solicitudes de seguros, pólizas médicas, denuncias por abuso o pérdidas de propiedad</p>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px; align-items:start;">
+                    <div class="responsive-grid-2-split" style="align-items:start;">
                         <!-- Left: Report Form -->
                         <div class="card" style="border-left:4px solid var(--gov-gold);">
                             <div class="card-header">
@@ -1501,7 +1689,7 @@
                         <p>Postulaciones oficiales para puestos del Estado y empleo gubernamental</p>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px; align-items:start;">
+                    <div class="responsive-grid-2-split" style="align-items:start;">
                         <!-- Left: Job Request Form -->
                         <div class="card">
                             <div class="card-header"><h3>Solicitar Rango / Empleo Gubernamental</h3></div>
@@ -1648,7 +1836,7 @@
                         <h2><i class="fa-solid fa-shield-halved" style="color:var(--gov-blue);"></i> MDC — Mobile Data Computer</h2>
                         <p>Base de datos criminal de la Policía de Los Santos y Sheriff del Condado</p>
                     </div>
-                    <div style="display:grid; grid-template-columns:300px 1fr; gap:20px;">
+                    <div class="responsive-grid-mdc">
                         <div>
                             <div class="card">
                                 <div class="card-header"><h3>Buscar Ciudadano</h3></div>
@@ -1753,7 +1941,7 @@
                         <h2><i class="fa-solid fa-pen-to-square" style="color:var(--gov-blue);"></i> Editor del Portal Público</h2>
                         <p>Administración del contenido visible para los ciudadanos</p>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; flex-wrap:wrap;">
+                    <div class="responsive-grid-2-equal">
                         <div class="card">
                             <div class="card-header"><h3><i class="fa-solid fa-image"></i> Sección Hero</h3></div>
                             <div class="card-body">
@@ -2090,10 +2278,12 @@
             <div id="hack-rutas" class="hack-module active">
                 <div class="hack-section-title">// RUTAS ACTIVAS — TRANSPORTE DE VALORES GRUPPE 6</div>
                 <div style="font-size:0.7rem;color:var(--hack-orange);margin-bottom:16px;">ADVERTENCIA: INFORMACIÓN ULTRA-CLASSIFICADA. DISTRIBUCIÓN PENALIZADA POR LEY FEDERAL.</div>
-                <table class="hack-table">
+                <div class="hack-table-wrap">
+                    <table class="hack-table">
                     <thead><tr><th>MATRÍCULA/CÓDIGO</th><th>TRAYECTO</th><th>ETA</th><th>VALOR EN EFECTIVO</th><th>ESCOLTA</th><th>ESTADO</th></tr></thead>
                     <tbody id="hack-rutas-tbody"></tbody>
                 </table>
+                </div>
             </div>
             <!-- NÓMINA POLICIAL -->
             <div id="hack-nomina" class="hack-module">
@@ -2102,23 +2292,29 @@
                     <span style="color:var(--hack-green);font-family:var(--font-mono);font-size:0.8rem;">[SELECCIONAR NOMINA_DAT]:</span>
                     <select id="hack-payroll-faction-select" class="form-control" style="background:var(--hack-panel);color:var(--hack-green);border:1px solid var(--hack-border);font-family:var(--font-mono);font-size:0.8rem;width:240px;margin-bottom:0;" onchange="handleHackFactionChange(this.value)"></select>
                 </div>
-                <table class="hack-table">
+                <div class="hack-table-wrap">
+                    <table class="hack-table">
                     <thead><tr><th>PLACA</th><th>NOMBRE</th><th>RANGO</th><th>DEPTO</th><th>SALARIO</th><th>ESTADO</th></tr></thead>
                     <tbody id="hack-nomina-tbody"></tbody>
                 </table>
+                </div>
             </div>
             <!-- NEGOCIOS INVESTIGADOS -->
             <div id="hack-negocios" class="hack-module">
                 <div class="hack-section-title">// OPERACIONES DE VIGILANCIA — NEGOCIOS INVESTIGADOS POR LAVADO</div>
-                <table class="hack-table">
+                <div class="hack-table-wrap">
+                    <table class="hack-table">
                     <thead><tr><th>REG. FISCAL</th><th>NEGOCIO</th><th>PROPIETARIO</th><th>VIGILANCIA</th><th>ÚLT. INSPECCIÓN</th></tr></thead>
                     <tbody id="hack-negocios-tbody"></tbody>
                 </table>
+                </div>
                 <div class="hack-section-title" style="margin-top:20px;">// BASE DE DATOS GENERAL — COMERCIOS Y NEGOCIOS REGISTRADOS (DNI CIVILES)</div>
-                <table class="hack-table">
+                <div class="hack-table-wrap">
+                    <table class="hack-table">
                     <thead><tr><th>PROPIETARIO</th><th>NEGOCIO</th><th>ID PROPIETARIO</th><th>SALDO BANCARIO</th><th>RIESGO SSC</th></tr></thead>
                     <tbody id="hack-civilian-businesses-tbody"></tbody>
                 </table>
+                </div>
             </div>
             <!-- PROYECTOS SECRETOS -->
             <div id="hack-proyectos" class="hack-module">
@@ -2129,10 +2325,12 @@
             <div id="hack-testigos" class="hack-module">
                 <div class="hack-section-title" style="color:var(--hack-red);">// [BRECHA DE SEGURIDAD] BASE DE DATOS DE PROTECCIÓN A TESTIGOS</div>
                 <div style="font-size:0.7rem;color:var(--hack-orange);margin-bottom:16px;">ADVERTENCIA: INFORMACIÓN CONFIDENCIAL DE ALTA SEGURIDAD. EL ACCESO A ESTOS REGISTROS ALERTARÁ A LAS AUTORIDADES INMEDIATAMENTE.</div>
-                <table class="hack-table">
+                <div class="hack-table-wrap">
+                    <table class="hack-table">
                     <thead><tr><th>TESTIGO</th><th>IDENTIDAD DE CUBIERTA (ALIAS)</th><th>UBICACIÓN DE RESGUARDO (PISO FRANCO)</th><th>AGENTE/ESCOLTA ASIGNADO</th><th>ESTADO</th></tr></thead>
                     <tbody id="hack-testigos-tbody"></tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
@@ -2143,6 +2341,148 @@
      ============================================================ -->
 <script>
     'use strict';
+
+    // ============================================================
+    // DIÁLOGOS Y ALERTAS PERSONALIZADAS (PREMIUM)
+    // ============================================================
+    function customConfirm(title, message, options = {}) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('modal-custom-confirm');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const msgEl = document.getElementById('confirm-modal-message');
+            const headerEl = document.getElementById('confirm-modal-header');
+            const inputEl = document.getElementById('confirm-modal-input');
+            const btnCancel = document.getElementById('confirm-modal-btn-cancel');
+            const btnConfirm = document.getElementById('confirm-modal-btn-action');
+
+            titleEl.innerHTML = `<i class="${options.icon || 'fa-solid fa-circle-question'}" style="color: ${options.iconColor || 'var(--gov-gold)'}; margin-right: 8px;"></i>${title}`;
+            msgEl.textContent = message;
+            inputEl.style.display = 'none';
+
+            // Reset buttons visibility
+            btnCancel.style.display = '';
+
+            // Type styling
+            if (options.type === 'danger') {
+                headerEl.style.background = 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)';
+                btnConfirm.className = 'btn btn-danger';
+                btnConfirm.innerHTML = `<i class="fa-solid fa-trash"></i> Eliminar`;
+            } else if (options.type === 'warning') {
+                headerEl.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                btnConfirm.className = 'btn btn-gold';
+                btnConfirm.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Proceder`;
+            } else {
+                headerEl.style.background = 'var(--gov-navy)';
+                btnConfirm.className = 'btn btn-primary';
+                btnConfirm.innerHTML = `<i class="fa-solid fa-check"></i> Aceptar`;
+            }
+
+            modal.classList.add('open');
+
+            const handleConfirm = () => {
+                modal.classList.remove('open');
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                modal.classList.remove('open');
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                btnConfirm.removeEventListener('click', handleConfirm);
+                btnCancel.removeEventListener('click', handleCancel);
+            };
+
+            btnConfirm.addEventListener('click', handleConfirm);
+            btnCancel.addEventListener('click', handleCancel);
+        });
+    }
+
+    function customAlert(title, message, options = {}) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('modal-custom-confirm');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const msgEl = document.getElementById('confirm-modal-message');
+            const headerEl = document.getElementById('confirm-modal-header');
+            const inputEl = document.getElementById('confirm-modal-input');
+            const btnCancel = document.getElementById('confirm-modal-btn-cancel');
+            const btnConfirm = document.getElementById('confirm-modal-btn-action');
+
+            titleEl.innerHTML = `<i class="${options.icon || 'fa-solid fa-circle-exclamation'}" style="color: ${options.iconColor || 'var(--gov-gold)'}; margin-right: 8px;"></i>${title}`;
+            msgEl.textContent = message;
+            inputEl.style.display = 'none';
+
+            headerEl.style.background = 'var(--gov-navy)';
+            btnConfirm.className = 'btn btn-primary';
+            btnConfirm.innerHTML = `<i class="fa-solid fa-check"></i> Aceptar`;
+            btnCancel.style.display = 'none'; // Hide cancel button
+
+            modal.classList.add('open');
+
+            const handleConfirm = () => {
+                modal.classList.remove('open');
+                btnCancel.style.display = ''; // Restore cancel button
+                btnConfirm.removeEventListener('click', handleConfirm);
+                resolve(true);
+            };
+
+            btnConfirm.addEventListener('click', handleConfirm);
+        });
+    }
+
+    function customPrompt(title, message, placeholder = '') {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('modal-custom-confirm');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const msgEl = document.getElementById('confirm-modal-message');
+            const headerEl = document.getElementById('confirm-modal-header');
+            const inputEl = document.getElementById('confirm-modal-input');
+            const btnCancel = document.getElementById('confirm-modal-btn-cancel');
+            const btnConfirm = document.getElementById('confirm-modal-btn-action');
+
+            titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square" style="color: var(--gov-gold); margin-right: 8px;"></i>${title}`;
+            msgEl.textContent = message;
+
+            inputEl.value = '';
+            inputEl.placeholder = placeholder;
+            inputEl.style.display = 'block';
+            btnCancel.style.display = '';
+
+            headerEl.style.background = 'var(--gov-navy)';
+            btnConfirm.className = 'btn btn-primary';
+            btnConfirm.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar`;
+
+            modal.classList.add('open');
+            inputEl.focus();
+
+            const handleConfirm = () => {
+                const val = inputEl.value;
+                modal.classList.remove('open');
+                inputEl.style.display = 'none';
+                cleanup();
+                resolve(val);
+            };
+
+            const handleCancel = () => {
+                modal.classList.remove('open');
+                inputEl.style.display = 'none';
+                cleanup();
+                resolve(null);
+            };
+
+            const cleanup = () => {
+                btnConfirm.removeEventListener('click', handleConfirm);
+                btnCancel.removeEventListener('click', handleCancel);
+            };
+
+            btnConfirm.addEventListener('click', handleConfirm);
+            btnCancel.addEventListener('click', handleCancel);
+        });
+    }
+
 
     // ============================================================
     // CONSTANTS & STATE
@@ -3475,7 +3815,7 @@
             return;
         }
         
-        const confirmPay = confirm(`¿Confirmas el pago de la cuota mensual de $${Math.round(monthlyInstallment).toLocaleString()}? Se debitará de tu cuenta bancaria.`);
+        const confirmPay = await customConfirm('Confirmar Pago', `¿Confirmas el pago de la cuota mensual de ${Math.round(monthlyInstallment).toLocaleString()}? Se debitará de tu cuenta bancaria.`, { type: 'warning', icon: 'fa-solid fa-credit-card', iconColor: 'var(--gov-gold)' });
         if (!confirmPay) return;
         
         bankVal -= monthlyInstallment;
@@ -3574,7 +3914,7 @@
     }
 
     async function resolveReportPrompt(reportId, action) {
-        const notes = prompt(`Introduce notas de resolución para esta solicitud (${action}):`);
+        const notes = await customPrompt('Resolver Trámite', `Introduce notas de resolución para esta solicitud (${action}):`, 'Notas de resolución...');
         if (notes === null) return; // cancelled
         
         try {
@@ -3665,7 +4005,7 @@
                     <div>
                         <div class="dni-name">${c.name}</div>
                         <div class="dni-field"><div class="dni-field-label">ID / Cédula</div><div class="dni-field-value">${c.id}</div></div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px;">
+                        <div class="responsive-grid-3" style="margin-top:8px;">
                             <div class="dni-field"><div class="dni-field-label">Fecha Nacimiento</div><div class="dni-field-value">${c.birthdate || '—'}</div></div>
                             <div class="dni-field"><div class="dni-field-label">Género</div><div class="dni-field-value">${c.gender || '—'}</div></div>
                             <div class="dni-field"><div class="dni-field-label">Altura</div><div class="dni-field-value">${c.height || '—'}</div></div>
@@ -3686,7 +4026,7 @@
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><strong>Nivel de Riesgo (SSC):</strong> <span>${verazBadge(c.veraz)}</span></div>
                 <hr style="border:none; border-top:1px solid var(--gov-border); margin:12px 0;">
                 <div style="font-weight:700; margin-bottom:8px; color:var(--gov-navy);">Licencias del Estado</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                <div class="responsive-grid-3">
                     <div class="card" style="padding:10px;text-align:center;border:1px solid var(--gov-border);"><i class="fa-solid fa-car" style="color:var(--gov-blue-mid);font-size:1.2rem;margin-bottom:6px;display:block;"></i><span style="font-size:0.75rem;font-weight:600;">Lic. Conducir</span><div style="font-size:0.7rem;color:var(--gov-muted);margin-top:2px;">${c.driverLicense || 'NO'}</div></div>
                     <div class="card" style="padding:10px;text-align:center;border:1px solid var(--gov-border);"><i class="fa-solid fa-gun" style="color:var(--gov-blue-mid);font-size:1.2rem;margin-bottom:6px;display:block;"></i><span style="font-size:0.75rem;font-weight:600;">Lic. Armas</span><div style="font-size:0.7rem;color:var(--gov-muted);margin-top:2px;">${c.weaponLicense || 'NO'}</div></div>
                     <div class="card" style="padding:10px;text-align:center;border:1px solid var(--gov-border);"><i class="fa-solid fa-store" style="color:var(--gov-blue-mid);font-size:1.2rem;margin-bottom:6px;display:block;"></i><span style="font-size:0.75rem;font-weight:600;">Lic. Comercial</span><div style="font-size:0.7rem;color:var(--gov-muted);margin-top:2px;">${c.commercialLicense || 'NO'}</div></div>
@@ -3940,7 +4280,8 @@
     }
 
     async function resolveRoleRequest(id, status) {
-        if (!confirm(`¿Estás seguro de que deseas marcar esta solicitud como ${status}?`)) return;
+        const hasConfirmed = await customConfirm('Resolver Solicitud', `¿Estás seguro de que deseas marcar esta solicitud como ${status}?`, { type: 'warning', icon: 'fa-solid fa-signature', iconColor: 'var(--gov-gold)' });
+        if (!hasConfirmed) return;
         try {
             const res = await fetch(`${SERVER_URL}/api/role-requests/${id}`, {
                 method: 'PUT',
@@ -4470,7 +4811,7 @@
                     <div>
                         <div class="dni-name">${c.name}</div>
                         <div class="dni-field"><div class="dni-field-label">ID / Cédula</div><div class="dni-field-value">${c.id}</div></div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px;">
+                        <div class="responsive-grid-3" style="margin-top:8px;">
                             <div class="dni-field"><div class="dni-field-label">Fecha Nacimiento</div><div class="dni-field-value">${c.birthdate || '—'}</div></div>
                             <div class="dni-field"><div class="dni-field-label">Género</div><div class="dni-field-value">${c.gender || '—'}</div></div>
                             <div class="dni-field"><div class="dni-field-label">Altura</div><div class="dni-field-value">${c.height || '—'}</div></div>
@@ -4481,7 +4822,7 @@
                     </div>
                 </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;">
+            <div class="responsive-grid-auto-fit-200" style="margin-bottom:20px;">
                 <div class="stat-card"><div class="icon"><i class="fa-solid fa-house" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="font-size:0.85rem; font-weight:700; line-height:1.4;">${(c.address || '—')}</div><div class="label">Dirección</div></div>
                 <div class="stat-card"><div class="icon"><i class="fa-solid fa-briefcase" style="color:var(--gov-blue-mid);"></i></div><div class="num">${c.bank || '—'}</div><div class="label">Saldo Bancario</div></div>
                 <div class="stat-card"><div class="icon"><i class="fa-solid fa-scale-balanced" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="color:${c.fines > 0 ? 'var(--status-red)' : 'var(--status-green)'}">$${Number(c.fines||0).toLocaleString()}</div><div class="label">Multas Pendientes</div></div>
@@ -4611,7 +4952,8 @@
     }
 
     async function deleteCitizen(id) {
-        if (!confirm('¿Eliminar este ciudadano del sistema? Esta acción no se puede revertir.')) return;
+        const hasConfirmed = await customConfirm('Eliminar Ciudadano', '¿Eliminar este ciudadano del sistema? Esta acción no se puede revertir.', { type: 'danger', icon: 'fa-solid fa-user-minus', iconColor: 'var(--status-red)' });
+        if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/citizens/${id}`, { method: 'DELETE' });
             CITIZENS = CITIZENS.filter(c => c.id !== id);
@@ -4744,7 +5086,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
+                    <div class="responsive-grid-auto-fit-160" style="margin-bottom:20px;">
                         <div class="stat-card"><div class="label">Teléfono</div><div class="num" style="font-size:1rem;">${c.phone||'—'}</div></div>
                         <div class="stat-card"><div class="label">Empleo</div><div class="num" style="font-size:0.85rem;">${c.job||'—'}</div></div>
                         <div class="stat-card"><div class="label">Dirección</div><div class="num" style="font-size:0.8rem;">${c.address||'—'}</div></div>
@@ -4975,7 +5317,8 @@
     }
 
     async function deleteCrime(id) {
-        if (!confirm('¿Eliminar este antecedente?')) return;
+        const hasConfirmed = await customConfirm('Eliminar Antecedente', '¿Eliminar este antecedente?', { type: 'danger', icon: 'fa-solid fa-gavel', iconColor: 'var(--status-red)' });
+        if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/criminal-records/${id}`, { method: 'DELETE' });
             CRIMINAL_RECORDS = CRIMINAL_RECORDS.filter(r => r.id !== id);
@@ -5052,7 +5395,8 @@
     }
 
     async function reviewWarrant(id, decision) {
-        const notes = decision === 'Rechazada' ? prompt('Motivo del rechazo (opcional):') : '';
+        const notes = decision === 'Rechazada' ? await customPrompt('Motivo de Rechazo', 'Motivo del rechazo (opcional):', 'Escribe el motivo del rechazo...') : '';
+        if (decision === 'Rechazada' && notes === null) return; // cancelled
         try {
             await fetch(`${SERVER_URL}/api/judicial-orders/${id}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -5101,11 +5445,11 @@
         const periodText = LOANS_CONFIG.interestPeriod === 'diario' ? 'Día (Diario)' : (LOANS_CONFIG.interestPeriod === 'mensual' ? 'Mes (Mensual)' : 'Año (Anual)');
         
         document.getElementById('loan-preview').innerHTML = amount > 0 ? `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div class="responsive-grid-2-equal" style="margin-bottom:12px;">
                 <div><div style="font-size:0.7rem;color:var(--gov-muted);text-transform:uppercase;letter-spacing:0.5px;">Tasa Configurada</div><div style="font-weight:700;color:var(--gov-blue-mid);">${LOANS_CONFIG.interestRate}% por ${periodText}</div></div>
                 <div><div style="font-size:0.7rem;color:var(--gov-muted);text-transform:uppercase;letter-spacing:0.5px;">Interés Total Acumulado</div><div style="font-weight:700;color:var(--status-orange);">${(interestPercent * 100).toFixed(1)}%</div></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="responsive-grid-3">
                 <div><div style="font-size:0.7rem;color:var(--gov-muted);text-transform:uppercase;letter-spacing:0.5px;">Monto solicitado</div><div style="font-weight:800;color:var(--gov-navy);">$${amount.toLocaleString()}</div></div>
                 <div><div style="font-size:0.7rem;color:var(--gov-muted);text-transform:uppercase;letter-spacing:0.5px;">Total a pagar</div><div style="font-weight:800;color:var(--status-red);">$${total.toLocaleString('es-ES',{maximumFractionDigits:0})}</div></div>
                 <div><div style="font-size:0.7rem;color:var(--gov-muted);text-transform:uppercase;letter-spacing:0.5px;">Cuota mensual</div><div style="font-weight:800;color:var(--gov-green);">$${monthly.toLocaleString('es-ES',{maximumFractionDigits:0})}</div></div>
@@ -5298,7 +5642,8 @@
     }
 
     async function deleteNews(id) {
-        if (!confirm('¿Eliminar esta noticia?')) return;
+        const hasConfirmed = await customConfirm('Eliminar Noticia', '¿Eliminar esta noticia?', { type: 'danger', icon: 'fa-solid fa-trash-can', iconColor: 'var(--status-red)' });
+        if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/news/${id}`, { method: 'DELETE' });
             NEWS = NEWS.filter(n => n.id !== id);
@@ -5381,7 +5726,8 @@
     }
 
     async function deleteUser(id, name) {
-        if (!confirm(`¿Revocar acceso de "${name}"? Esta acción no se puede revertir.`)) return;
+        const hasConfirmed = await customConfirm('Revocar Acceso', `¿Revocar acceso de "${name}"? Esta acción no se puede revertir.`, { type: 'danger', icon: 'fa-solid fa-user-slash', iconColor: 'var(--status-red)' });
+        if (!hasConfirmed) return;
         try {
             await fetch(`${SERVER_URL}/api/users/${id}`, { method: 'DELETE' });
             SYSTEM_USERS = SYSTEM_USERS.filter(u => u.id !== id);
@@ -5439,11 +5785,11 @@
     }
 
     async function createNewFaction() {
-        const name = prompt('Ingresa el nombre de la nueva facción / nómina (ej. Médicos, Jueces, Gobierno):');
+        const name = await customPrompt('Crear Nómina', 'Ingresa el nombre de la nueva facción / nómina (ej. Médicos, Jueces, Gobierno):', 'Nombre de la facción...');
         if (!name || name.trim() === '') return;
         const trimmed = name.trim();
         if (CLASSIFIED_PAYROLLS[trimmed]) {
-            alert('Esta facción ya existe.');
+            await customAlert('Acción Inválida', 'Esta facción ya existe.', { icon: 'fa-solid fa-triangle-exclamation', iconColor: 'var(--status-red)' });
             return;
         }
         CLASSIFIED_PAYROLLS[trimmed] = [];
@@ -5454,11 +5800,11 @@
     }
 
     async function renameCurrentFaction() {
-        const newName = prompt(`Ingresa el nuevo nombre para la facción "${selectedFaction}":`);
+        const newName = await customPrompt('Renombrar Nómina', `Ingresa el nuevo nombre para la facción "${selectedFaction}":`, 'Nuevo nombre...');
         if (!newName || newName.trim() === '' || newName.trim() === selectedFaction) return;
         const trimmed = newName.trim();
         if (CLASSIFIED_PAYROLLS[trimmed]) {
-            alert('Esta facción ya existe.');
+            await customAlert('Acción Inválida', 'Esta facción ya existe.', { icon: 'fa-solid fa-triangle-exclamation', iconColor: 'var(--status-red)' });
             return;
         }
         CLASSIFIED_PAYROLLS[trimmed] = CLASSIFIED_PAYROLLS[selectedFaction];
@@ -5470,7 +5816,8 @@
     }
 
     async function deleteCurrentFaction() {
-        if (!confirm(`¿Estás seguro de que deseas eliminar por completo la facción "${selectedFaction}" y todos sus miembros?`)) return;
+        const hasConfirmed = await customConfirm('Eliminar Nómina', `¿Estás seguro de que deseas eliminar por completo la facción "${selectedFaction}" y todos sus miembros?`, { type: 'danger', icon: 'fa-solid fa-users-slash', iconColor: 'var(--status-red)' });
+        if (!hasConfirmed) return;
         delete CLASSIFIED_PAYROLLS[selectedFaction];
         const keys = Object.keys(CLASSIFIED_PAYROLLS);
         if (keys.length > 0) {
@@ -6272,7 +6619,8 @@
     }
 
     async function deleteWitness(id) {
-        if (!confirm('¿Estás seguro de que deseas eliminar este testigo de la base de datos de protección?')) return;
+        const hasConfirmed = await customConfirm('Eliminar Testigo', '¿Estás seguro de que deseas eliminar este testigo de la base de datos de protección?', { type: 'danger', icon: 'fa-solid fa-user-shield', iconColor: 'var(--status-red)' });
+        if (!hasConfirmed) return;
         try {
             const res = await fetch(`${SERVER_URL}/api/witness-protection/${id}`, { method: 'DELETE' });
             if (res.ok) {
