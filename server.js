@@ -243,6 +243,11 @@ async function initDb() {
       ALTER TABLE recsa_users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT FALSE;
     `);
 
+    await client.query(`
+      ALTER TABLE recsa_citizens ADD COLUMN IF NOT EXISTS ssc_points INTEGER DEFAULT 0;
+      ALTER TABLE recsa_citizens ADD COLUMN IF NOT EXISTS ssc_points_manual INTEGER DEFAULT 0;
+    `);
+
     // Auto-approve all Governor accounts so the user is not locked out
     await client.query(`
       UPDATE recsa_users SET approved = TRUE WHERE LOWER(role) = 'gobernador' OR username = 'GobernadorH';
@@ -296,22 +301,7 @@ async function initDb() {
       [JSON.stringify(defaultWitnessComp)]
     );
 
-    // Seed witness protection if table is empty
-    const witnessCountCheck = await client.query("SELECT COUNT(*) FROM recsa_witness_protection");
-    if (parseInt(witnessCountCheck.rows[0].count) === 0) {
-      console.log('Sembrando testigos protegidos iniciales...');
-      await client.query(`
-        INSERT INTO recsa_witness_protection (witness_name, alias, safehouse_location, assigned_officers, status, notes)
-        VALUES 
-        ('Michael De Santa', 'Albert De Silva', 'Mansión Banham Canyon Rd', 'Agente Dave Norton (FIB)', 'Bajo Resguardo', 'Testigo clave contra la mafia de Devin Weston.'),
-        ('Karen Drake', 'T-100', 'Apartamento 3B - El Burro Heights', 'Oficial Jones (LSPD)', 'Seguridad Media', 'Proporcionó información sobre el cartel de Madrazo.'),
-        ('Brad Snider', 'BradS', 'Cementerio de Ludendorff (Fingido)', 'Agente Steve Haines (FIB)', 'Reubicado', 'Simulación de muerte para cobertura de testigo.')
-      `);
-      await client.query(
-        "INSERT INTO recsa_config (key, value) VALUES ('witness_seeded', $1) ON CONFLICT (key) DO NOTHING",
-        [JSON.stringify(true)]
-      );
-    }
+
 
     // NOTE: No citizen seeds — citizens are managed exclusively via the admin panel ("Data de Ciudadanos").
     // Deleted citizens will NOT reappear after server restarts.
@@ -382,37 +372,28 @@ async function autoCalculateCitizenRisk(db, citizenId) {
     const recordsRes = await db.query('SELECT * FROM recsa_criminal_records WHERE citizen_id = $1', [citizenId]);
     const records = recordsRes.rows;
 
-    const loansRes = await db.query('SELECT * FROM recsa_loan_requests WHERE citizen_id = $1', [citizenId]);
-    const loans = loansRes.rows;
+    // Calcular cantidad total de cargos (cada delito individual en cada registro criminal)
+    let totalCargos = 0;
+    records.forEach(r => {
+      const crimesList = (r.crime || '').split(';').map(s => s.trim()).filter(Boolean);
+      totalCargos += crimesList.length;
+    });
 
-    let newVeraz = 'Verde'; // Default: safe & normal status
+    const manualPoints = parseInt(c.ssc_points_manual) || 0;
+    const totalPoints = manualPoints - totalCargos;
 
-    const finesVal = parseFloat((c.fines || '').replace(/[^0-9.-]+/g, '')) || 0;
-    const bankVal = parseFloat((c.bank || '').replace(/[^0-9.-]+/g, '')) || 0;
-    const isWanted = ['buscado', 'prófugo', 'arrestado'].includes((c.police_status || '').toLowerCase());
-    const hasApprovedLoans = loans.some(l => l.status === 'Aprobado');
-
-    // Risk rules logic:
-    if (isWanted) {
+    let newVeraz = 'Naranja';
+    if (totalPoints >= 25) {
+      newVeraz = 'Verde';
+    } else if (totalPoints <= -25) {
       newVeraz = 'Rojo';
-    } else if (finesVal > 10000) {
-      newVeraz = 'Rojo';
-    } else if (records.length >= 3) {
-      newVeraz = 'Rojo';
-    } else if (hasApprovedLoans && bankVal < 100) {
-      newVeraz = 'Rojo';
-    } else if (finesVal > 0) {
-      newVeraz = 'Naranja';
-    } else if (records.length > 0 && records.length < 3) {
-      newVeraz = 'Naranja';
-    } else if (c.driver_license === 'NO' && records.length > 0) {
-      newVeraz = 'Naranja';
     }
 
-    if (c.veraz !== newVeraz) {
-      await db.query('UPDATE recsa_citizens SET veraz = $1 WHERE id = $2', [newVeraz, citizenId]);
-      console.log(`[RISK UPDATE] Citizen ${c.name} (${citizenId}): ${c.veraz} -> ${newVeraz}`);
-    }
+    await db.query(
+      'UPDATE recsa_citizens SET veraz = $1, ssc_points = $2 WHERE id = $3',
+      [newVeraz, totalPoints, citizenId]
+    );
+    console.log(`[SSC RISK UPDATE] Citizen ${c.name} (${citizenId}): points = ${totalPoints} (${manualPoints} manual, ${totalCargos} cargos), state = ${newVeraz}`);
   } catch (err) {
     console.error(`Error calculating citizen risk for ${citizenId}:`, err.message);
   }
@@ -437,8 +418,9 @@ initDb();
 // ============================================================
 function requireGobernador(req, res, next) {
   const role = req.headers['x-user-role'];
-  if (role !== 'Gobernador') {
-    return res.status(403).json({ error: 'Solo el Gobernador puede realizar esta acción.' });
+  const r = (role || '').toLowerCase();
+  if (r !== 'gobernador' && r !== 'director del servicio secreto') {
+    return res.status(403).json({ error: 'Solo el Gobernador o el Director del Servicio Secreto pueden realizar esta acción.' });
   }
   next();
 }
@@ -462,8 +444,9 @@ app.post('/api/auth/login', async (req, res) => {
     if (result.rows.length > 0) {
       const dbUser = result.rows[0];
       if (!dbUser.approved) {
-        if (dbUser.role && dbUser.role.toLowerCase() === 'gobernador') {
-          // Auto-approve gobernador in DB to prevent future issues
+        const dbRole = (dbUser.role || '').toLowerCase();
+        if (dbRole === 'gobernador' || dbRole === 'director del servicio secreto') {
+          // Auto-approve in DB to prevent future issues
           await pool.query('UPDATE recsa_users SET approved = true WHERE id = $1', [dbUser.id]);
           dbUser.approved = true;
         } else {
@@ -870,7 +853,9 @@ app.get('/api/citizens', async (req, res) => {
       businesses: c.businesses || [],
       properties: c.properties || [],
       vehicles: c.vehicles || [],
-      payments: c.payments || []
+      payments: c.payments || [],
+      sscPoints: parseInt(c.ssc_points) || 0,
+      sscPointsManual: parseInt(c.ssc_points_manual) || 0
     }));
     res.json(mapped);
   } catch (error) {
@@ -941,6 +926,36 @@ app.post('/api/citizens', async (req, res) => {
   }
 });
 
+// Adjust manual points of a citizen (authorized roles only)
+app.post('/api/citizens/:id/adjust-points', requireGobernador, async (req, res) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+  try {
+    const citizenRes = await pool.query('SELECT name, ssc_points_manual FROM recsa_citizens WHERE id = $1', [id]);
+    if (citizenRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Ciudadano no encontrado.' });
+    }
+    const currentManual = parseInt(citizenRes.rows[0].ssc_points_manual) || 0;
+    const newManual = currentManual + parseInt(amount);
+
+    await pool.query('UPDATE recsa_citizens SET ssc_points_manual = $1 WHERE id = $2', [newManual, id]);
+    await autoCalculateCitizenRisk(pool, id);
+
+    const actor = req.headers['x-user-username'] || 'Gobernador';
+    await logActivity(actor, 'SSC_POINTS_ADJUST', `${amount > 0 ? 'Sumó' : 'Restó'} ${Math.abs(amount)} puntos manuales a ${citizenRes.rows[0].name} (ID: ${id})`);
+
+    const finalRes = await pool.query('SELECT ssc_points, ssc_points_manual, veraz FROM recsa_citizens WHERE id = $1', [id]);
+    res.json({
+      success: true,
+      ssc_points_manual: finalRes.rows[0].ssc_points_manual,
+      ssc_points: finalRes.rows[0].ssc_points,
+      veraz: finalRes.rows[0].veraz
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/api/citizens/:id', requireGobernador, async (req, res) => {
   const { id } = req.params;
   try {
@@ -955,13 +970,15 @@ app.delete('/api/citizens/:id', requireGobernador, async (req, res) => {
 app.get('/api/citizens/solvency', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, name, veraz, job, bank, fines, police_status
+      SELECT id, name, veraz, job, bank, fines, police_status, ssc_points, ssc_points_manual
       FROM recsa_citizens
       ORDER BY veraz ASC, fines DESC
     `);
     res.json(result.rows.map(c => ({
       id: c.id, name: c.name, veraz: c.veraz, job: c.job,
-      bank: c.bank, fines: parseFloat(c.fines), policeStatus: c.police_status
+      bank: c.bank, fines: parseFloat(c.fines), policeStatus: c.police_status,
+      sscPoints: parseInt(c.ssc_points) || 0,
+      sscPointsManual: parseInt(c.ssc_points_manual) || 0
     })));
   } catch (error) {
     res.status(500).json({ error: error.message });

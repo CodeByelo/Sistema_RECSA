@@ -1251,6 +1251,7 @@
                         <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
                         <option value="Miembro Gubernamental">Miembro Gubernamental</option>
                         <option value="Agente Especial">Agente Especial</option>
+                        <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
                         <option value="Gobernador">Gobernador (Acceso Total)</option>
                         <option value="Civil">Civil — Perfil propio</option>
                     </select>
@@ -1305,6 +1306,7 @@
                         <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
                         <option value="Miembro Gubernamental">Miembro Gubernamental</option>
                         <option value="Agente Especial">Agente Especial</option>
+                        <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
                         <option value="Gobernador">Gobernador (Acceso Total)</option>
                         <option value="Civil">Civil — Perfil propio</option>
                     </select>
@@ -1624,7 +1626,7 @@
                     <span class="sb-badge" id="sb-bails-badge" style="display:none;">0</span>
                 </button>
                 <!-- Finance -->
-                <div class="sidebar-section-label" id="sb-label-finance">Finanzas</div>
+                <div class="sidebar-section-label" id="sb-label-finance">SA Savers</div>
                 <button class="sidebar-btn" id="sb-loans" onclick="switchTab('loans')">
                     <span class="sb-icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>
                     <span>Créditos y Préstamos</span>
@@ -1653,11 +1655,6 @@
                 <button class="sidebar-btn" id="sb-sigma-code-btn" onclick="loadSigmaCode(); document.getElementById('sigma-code-panel').style.display='flex';" style="display:none; color:#33ff33; border-top:1px solid var(--gov-border); margin-top:8px; padding-top:10px;">
                     <span class="sb-icon"><i class="fa-solid fa-lock-open"></i></span>
                     <span>Código SIGMA-7</span>
-                </button>
-                <!-- WITNESS PROTECTION SIDEBAR BUTTON -->
-                <button class="sidebar-btn" id="sb-witness-protection" onclick="switchTab('witness-protection')" style="display:none; color:#ff3366;">
-                    <span class="sb-icon"><i class="fa-solid fa-user-shield"></i></span>
-                    <span>Testigos Protegidos</span>
                 </button>
             </aside>
 
@@ -1835,6 +1832,7 @@
                                             <option value="Juez">Juez del Estado</option>
                                             <option value="Miembro Gubernamental">Miembro Gubernamental</option>
                                             <option value="Agente Especial">Agente Especial</option>
+                                            <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
                                             <option value="Gobernador">Gobernador / Staff</option>
                                         </select>
                                     </div>
@@ -2293,6 +2291,7 @@
                     <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
                         <button id="btn-sigma-blindados" class="btn btn-gov btn-sm" onclick="switchSigma('blindados')">Rutas Gruppe 6</button>
                         <button id="btn-sigma-nomina" class="btn btn-ghost btn-sm" onclick="switchSigma('nomina')">Nómina</button>
+                        <button id="btn-sigma-testigos" class="btn btn-ghost btn-sm" onclick="switchSigma('testigos')">Testigos Protegidos</button>
                         <button id="btn-sigma-negocios" class="btn btn-ghost btn-sm" onclick="switchSigma('negocios')">Negocios Investigados</button>
                         <button id="btn-sigma-secretos" class="btn btn-ghost btn-sm" onclick="switchSigma('secretos')">Proyectos Secretos</button>
                     </div>
@@ -2411,47 +2410,47 @@
                         </div>
                         <div id="sigma-secretos-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
-                </div>
 
-                <!-- TAB: PROTECCIÓN A TESTIGOS -->
-                <div id="tab-witness-protection" class="tab-content">
-                    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                        <div>
-                            <h2><i class="fa-solid fa-user-shield" style="color:var(--gov-blue);"></i> Protección a Testigos</h2>
-                            <p>Registro nacional de identidades protegidas y pisos franco de resguardo</p>
+                    <!-- SUB-TAB: TESTIGOS PROTEGIDOS (DENTRO DE SIGMA) -->
+                    <div id="sigma-section-testigos" style="display:none;">
+                        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <h3 style="color:var(--gov-gold); font-size:1.25rem; font-weight:800; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-user-shield"></i> Protección a Testigos</h3>
+                                <p style="font-size:0.85rem; color:var(--ink-3); margin-top:3px;">Registro nacional de identidades protegidas y pisos franco de resguardo</p>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-witness" onclick="openAddWitnessModal()"><i class="fa-solid fa-plus"></i> Registrar Testigo Protegido</button>
                         </div>
-                        <button class="btn btn-primary" id="btn-add-witness" onclick="openAddWitnessModal()"><i class="fa-solid fa-plus"></i> Registrar Testigo Protegido</button>
-                    </div>
 
-                    <!-- BREACH ALERT BANNER (Compromised Database Indicator) -->
-                    <div id="witness-breach-alert" style="display:none; background:#fee2e2; border:2px dashed #ef4444; border-radius:12px; padding:18px; margin-bottom:20px; align-items:center; gap:16px; animation: glowPulse 2s infinite alternate;">
-                        <div style="font-size:2.2rem;">🚨</div>
-                        <div style="flex:1;">
-                            <h4 style="color:#991b1b; font-weight:900; margin:0 0 4px 0; font-size:1rem; letter-spacing:0.5px;">ALERTA CRÍTICA: BASE DE DATOS COMPROMETIDA</h4>
-                            <p style="color:#7f1d1d; font-size:0.8rem; margin:0; line-height:1.4;" id="witness-breach-details">Se detectó una infiltración y lectura no autorizada de los datos de testigos protegidos.</p>
+                        <!-- BREACH ALERT BANNER (Compromised Database Indicator) -->
+                        <div id="witness-breach-alert" style="display:none; background:#fee2e2; border:2px dashed #ef4444; border-radius:12px; padding:18px; margin-bottom:20px; align-items:center; gap:16px; animation: glowPulse 2s infinite alternate;">
+                            <div style="font-size:2.2rem;">🚨</div>
+                            <div style="flex:1;">
+                                <h4 style="color:#991b1b; font-weight:900; margin:0 0 4px 0; font-size:1rem; letter-spacing:0.5px;">ALERTA CRÍTICA: BASE DE DATOS COMPROMETIDA</h4>
+                                <p style="color:#7f1d1d; font-size:0.8rem; margin:0; line-height:1.4;" id="witness-breach-details">Se detectó una infiltración y lectura no autorizada de los datos de testigos protegidos.</p>
+                            </div>
+                            <button class="btn btn-red" onclick="resetWitnessBreachAlert()" style="margin:0; background:#dc2626; border-color:#dc2626; color:#fff; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Restablecer Seguridad</button>
                         </div>
-                        <button class="btn btn-red" onclick="resetWitnessBreachAlert()" style="margin:0; background:#dc2626; border-color:#dc2626; color:#fff; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Restablecer Seguridad</button>
-                    </div>
 
-                    <!-- WITNESS TABLE -->
-                    <div class="card">
-                        <div class="table-wrap">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Nombre Real</th>
-                                        <th>Identidad Ficticia (Alias)</th>
-                                        <th>Lugar de Resguardo (Piso Franco)</th>
-                                        <th>Agente/Escolta Asignado</th>
-                                        <th>Estado de Resguardo</th>
-                                        <th>Observaciones</th>
-                                        <th style="width:120px;">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="witness-tbody">
-                                    <!-- Dynamic rows from loadWitnesses() -->
-                                </tbody>
-                            </table>
+                        <!-- WITNESS TABLE -->
+                        <div class="card">
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre Real</th>
+                                            <th>Identidad Ficticia (Alias)</th>
+                                            <th>Lugar de Resguardo (Piso Franco)</th>
+                                            <th>Agente/Escolta Asignado</th>
+                                            <th>Estado de Resguardo</th>
+                                            <th>Observaciones</th>
+                                            <th style="width:120px;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="witness-tbody">
+                                        <!-- Dynamic rows from loadWitnesses() -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2476,8 +2475,8 @@
         <div class="hack-nav">
             <button class="hack-nav-btn active" onclick="switchHackTab('rutas', this)">RUTAS_GRUPPE6.dat</button>
             <button class="hack-nav-btn" onclick="switchHackTab('nomina', this)">NOMINA_POLICIAL.dat</button>
-            <button class="hack-nav-btn" onclick="switchHackTab('negocios', this)">NEGOCIOS_INV.dat</button>
-            <button class="hack-nav-btn" onclick="switchHackTab('proyectos', this)">PROYECTOS_SEC.dat</button>
+            <button class="hack-nav-btn" id="hack-btn-negocios" onclick="switchHackTab('negocios', this)">NEGOCIOS_INV.dat</button>
+            <button class="hack-nav-btn" id="hack-btn-proyectos" onclick="switchHackTab('proyectos', this)">PROYECTOS_SEC.dat</button>
             <button class="hack-nav-btn" onclick="switchHackTab('testigos', this)" style="color:var(--hack-red);font-weight:700;">TESTIGOS_PROT.dat</button>
         </div>
         <div class="hack-content">
@@ -4825,30 +4824,32 @@
         return (currentUser.username || '').toLowerCase();
     }
     function isGov() { return getRole() === 'gobernador'; }
+    function isSecretService() { return getRole() === 'director del servicio secreto'; }
+    function isGovOrSS() { return isGov() || isSecretService(); }
     function isPolice() { return getRole() === 'lspd' || getRole() === 'lssd'; }
     function isJudge() { return getRole() === 'juez'; }
     function isBanco() { return getRole() === 'banco recsa'; }
     function isInspector() { return getRole().includes('inspector') || getRole().includes('admin'); }
     // canEditCitizens: quién puede agregar/editar ciudadanos en el padrón
-    function canEditCitizens() { return isGov() || isPolice() || isInspector(); }
-    // canDeleteCitizen: solo el Gobernador puede eliminar un ciudadano del padrón
-    function canDeleteCitizen() { return isGov(); }
+    function canEditCitizens() { return isGovOrSS() || isPolice() || isInspector(); }
+    // canDeleteCitizen: solo el Gobernador y el Director del Servicio Secreto pueden eliminar un ciudadano del padrón
+    function canDeleteCitizen() { return isGovOrSS(); }
     // canSeeMDC: quién tiene acceso al MDC (historial criminal)
-    function canSeeMDC() { return isGov() || isPolice() || isJudge() || isInspector(); }
+    function canSeeMDC() { return isGovOrSS() || isPolice() || isJudge() || isInspector(); }
     // canAddCriminalRecord: quién puede registrar antecedentes
-    function canAddCriminalRecord() { return isGov() || isPolice() || isJudge(); }
-    // canDeleteCriminalRecord: solo el Gobernador puede eliminar antecedentes del sistema
-    function canDeleteCriminalRecord() { return isGov(); }
+    function canAddCriminalRecord() { return isGovOrSS() || isPolice() || isJudge(); }
+    // canDeleteCriminalRecord: solo el Gobernador y el Director del Servicio Secreto pueden eliminar antecedentes del sistema
+    function canDeleteCriminalRecord() { return isGovOrSS(); }
     // canSeeJudicial: quién puede ver las órdenes judiciales (policía puede verlas para ejecutarlas)
-    function canSeeJudicial() { return isGov() || isJudge() || isPolice(); }
-    // canApproveJudicial: solo el Juez y el Gobernador pueden aprobar/rechazar órdenes
-    function canApproveJudicial() { return isGov() || isJudge(); }
-    function canSeeLoansMgmt() { return isGov() || isInspector() || isBanco(); }
-    function canManagePortal() { return isGov() || isInspector(); }
-    function canManageUsers() { return isGov(); }
+    function canSeeJudicial() { return isGovOrSS() || isJudge() || isPolice(); }
+    // canApproveJudicial: solo el Juez, Gobernador y Director del Servicio Secreto pueden aprobar/rechazar órdenes
+    function canApproveJudicial() { return isGovOrSS() || isJudge(); }
+    function canSeeLoansMgmt() { return isGovOrSS() || isInspector() || isBanco(); }
+    function canManagePortal() { return isGovOrSS() || isInspector(); }
+    function canManageUsers() { return isGovOrSS(); }
     function isITOrGov() {
         const r = getRole();
-        return r === 'gobernador' || r === 'equipo_informatico' || r === 'informatica';
+        return r === 'gobernador' || r === 'equipo_informatico' || r === 'informatica' || r === 'director del servicio secreto';
     }
     function canManageSigma() { return isITOrGov(); }
 
@@ -4920,12 +4921,8 @@
             show('sb-citizen-reports', isGov() || canSeeMDC() || canSeeJudicial());
             show('sb-users', canManageUsers());
             show('sb-sigma', canManageSigma());
-            
-            // Show SIGMA code button for IT team and Governor
-            show('sb-sigma-code-btn', isITOrGov());
-
-            // Show witness protection button for Governor and authorized security roles
-            show('sb-witness-protection', isITOrGov());
+            // Show SIGMA code button for IT team and Governor (but not Secret Service)
+            show('sb-sigma-code-btn', isITOrGov() && !isSecretService());
 
             switchTab('ssc');
         }
@@ -4934,7 +4931,19 @@
         if (btnAdd) btnAdd.style.display = canEditCitizens() ? 'inline-flex' : 'none';
 
         const btnAddWitness = document.getElementById('btn-add-witness');
-        if (btnAddWitness) btnAddWitness.style.display = isGov() ? 'inline-flex' : 'none';
+        if (btnAddWitness) btnAddWitness.style.display = (isGov() || isSecretService()) ? 'inline-flex' : 'none';
+
+        // Restrict secret sections in SIGMA-7
+        const isSS = isSecretService();
+        const btnSigmaNegocios = document.getElementById('btn-sigma-negocios');
+        const btnSigmaSecretos = document.getElementById('btn-sigma-secretos');
+        if (btnSigmaNegocios) btnSigmaNegocios.style.display = isSS ? 'none' : '';
+        if (btnSigmaSecretos) btnSigmaSecretos.style.display = isSS ? 'none' : '';
+
+        const hackBtnNegocios = document.getElementById('hack-btn-negocios');
+        const hackBtnProyectos = document.getElementById('hack-btn-proyectos');
+        if (hackBtnNegocios) hackBtnNegocios.style.display = isSS ? 'none' : '';
+        if (hackBtnProyectos) hackBtnProyectos.style.display = isSS ? 'none' : '';
 
         updatePendingBadges();
         renderLandingPublic();
@@ -4953,9 +4962,11 @@
     // ============================================================
     // SSC — CITIZENS TABLE
     // ============================================================
-    function verazBadge(v) {
+    function verazBadge(v, points = 0) {
         const map = { 'Verde': 'badge-green', 'Naranja': 'badge-orange', 'Rojo': 'badge-red' };
-        return `<span class="badge ${map[v] || 'badge-gray'}">${v || '—'}</span>`;
+        const pts = parseInt(points) || 0;
+        const ptsSign = pts > 0 ? `+${pts}` : pts;
+        return `<span class="badge ${map[v] || 'badge-gray'}">${v || '—'} (${ptsSign} pts)</span>`;
     }
     function policeBadge(s) {
         const map = { 'Limpio': 'badge-green', 'Investigado': 'badge-orange', 'Buscado': 'badge-red', 'Arrestado': 'badge-red', 'Prófugo': 'badge-purple' };
@@ -5029,7 +5040,7 @@
                     <div style="font-weight:700;">${c.name}</div>
                     <div style="font-size:0.75rem;color:var(--gov-muted);">${c.phone || '—'}</div>
                 </td>
-                <td>${verazBadge(c.veraz)}</td>
+                <td>${verazBadge(c.veraz, c.sscPoints)}</td>
                 <td>${policeBadge(c.policeStatus)}</td>
                 <td style="font-size:0.85rem;">${c.job || '—'}</td>
                 <td style="color:${c.fines > 0 ? 'var(--status-red)' : 'var(--status-green)'}; font-weight:700;">$${Number(c.fines || 0).toLocaleString()}</td>
@@ -5086,6 +5097,32 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- SSC POINTS MANUAL CONTROL PANEL -->
+            <div class="card" style="margin-bottom:24px; padding:20px; border-left:4px solid var(--gov-gold); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; background:#fff;">
+                <div>
+                    <div style="font-size:0.75rem; text-transform:uppercase; font-weight:800; color:var(--ink-3); letter-spacing:0.7px;">Solvencia Civil (SSC)</div>
+                    <div style="font-size:1.5rem; font-weight:900; color:var(--ink); margin-top:2px; display:flex; align-items:center; gap:8px;">
+                        ${c.sscPoints || 0} 
+                        <span style="font-size:0.85rem; font-weight:600; color:var(--ink-3);">puntos totales</span>
+                        ${verazBadge(c.veraz, c.sscPoints)}
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--ink-3); margin-top:6px; line-height:1.4;">
+                        Ajuste manual: <strong style="color:var(--gov-navy);">${c.sscPointsManual || 0} pts</strong> | 
+                        Penalización por cargos: <strong style="color:var(--status-red);">${(parseInt(c.sscPointsManual || 0) - parseInt(c.sscPoints || 0))} cargos penales</strong>
+                    </div>
+                </div>
+                ${(isGov() || isSecretService()) ? `
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:0.72rem; font-weight:800; color:var(--ink-2); text-transform:uppercase; margin-right:4px;">Modificar Puntos:</span>
+                    <button class="btn btn-red btn-xs" style="margin:0; font-weight:800; padding:8px 12px;" onclick="adjustCitizenPoints(${c.id}, -5)">-5</button>
+                    <button class="btn btn-red btn-xs" style="margin:0; font-weight:800; padding:8px 12px;" onclick="adjustCitizenPoints(${c.id}, -1)">-1</button>
+                    <button class="btn btn-green btn-xs" style="margin:0; font-weight:800; padding:8px 12px;" onclick="adjustCitizenPoints(${c.id}, 1)">+1</button>
+                    <button class="btn btn-green btn-xs" style="margin:0; font-weight:800; padding:8px 12px;" onclick="adjustCitizenPoints(${c.id}, 5)">+5</button>
+                </div>
+                ` : ''}
+            </div>
+
             <div class="responsive-grid-auto-fit-200" style="margin-bottom:20px;">
                 <div class="stat-card"><div class="icon"><i class="fa-solid fa-house" style="color:var(--gov-blue-mid);"></i></div><div class="num" style="font-size:0.85rem; font-weight:700; line-height:1.4;">${(c.address || '—')}</div><div class="label">Dirección</div></div>
                 <div class="stat-card"><div class="icon"><i class="fa-solid fa-briefcase" style="color:var(--gov-blue-mid);"></i></div><div class="num">${c.bank || '—'}</div><div class="label">Saldo Bancario</div></div>
@@ -5117,6 +5154,42 @@
         `;
         panel.style.display = 'block';
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function adjustCitizenPoints(id, amount) {
+        try {
+            const res = await fetch(`${SERVER_URL}/api/citizens/${id}/adjust-points`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Role': currentUser ? currentUser.role : '',
+                    'X-User-Username': currentUser ? currentUser.username : ''
+                },
+                body: JSON.stringify({ amount })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                
+                const c = CITIZENS.find(x => x.id === id);
+                if (c) {
+                    c.sscPoints = data.ssc_points;
+                    c.sscPointsManual = data.ssc_points_manual;
+                    c.veraz = data.veraz;
+                }
+                
+                showToast('Puntos Actualizados', `Se ajustaron los puntos del ciudadano. Nuevo total: ${data.ssc_points} pts.`, 'success');
+                
+                viewCitizenDetail(id);
+                renderCitizenTable();
+                renderSolvencyTable();
+                loadSolvencyStats();
+            } else {
+                const err = await res.json();
+                showToast('Error', err.error || 'No se pudieron ajustar los puntos.', 'error');
+            }
+        } catch (e) {
+            showToast('Error de conexión', 'No se pudo contactar al servidor.', 'error');
+        }
     }
 
     // ============================================================
@@ -5309,7 +5382,7 @@
             <tr>
                 <td style="font-weight:700;">${c.id}</td>
                 <td><strong>${c.name}</strong></td>
-                <td>${verazBadge(c.veraz)}</td>
+                <td>${verazBadge(c.veraz, c.sscPoints)}</td>
                 <td>${c.job || '—'}</td>
                 <td>${c.bank || '—'}</td>
                 <td style="color:${c.fines > 0 ? 'var(--status-red)':'var(--status-green)'};font-weight:700;">$${Number(c.fines||0).toLocaleString()}</td>
@@ -6193,6 +6266,7 @@
         if (r.includes('banco')) return '<span class="badge badge-green"><i class="fa-solid fa-building-columns"></i> Banco</span>';
         if (r.includes('miembro gubernamental')) return '<span class="badge badge-gold"><i class="fa-solid fa-building-flag"></i> Miembro Gub.</span>';
         if (r.includes('agente especial')) return '<span class="badge badge-purple"><i class="fa-solid fa-user-secret"></i> Agente Especial</span>';
+        if (r.includes('director del servicio secreto')) return '<span class="badge badge-gold"><i class="fa-solid fa-user-shield"></i> Dir. Serv. Secreto</span>';
         if (r === 'equipo_informatico' || r.includes('inform')) return '<span class="badge badge-gray"><i class="fa-solid fa-terminal"></i> IT</span>';
         if (r === 'samd') return '<span class="badge badge-green"><i class="fa-solid fa-kit-medical"></i> SAMD</span>';
         if (r === 'civil') return '<span class="badge badge-gray"><i class="fa-solid fa-user"></i> Civil</span>';
@@ -6290,8 +6364,12 @@
     // ============================================================
     let activeSigmaSection = 'blindados';
     function switchSigma(section) {
+        if (isSecretService() && (section === 'negocios' || section === 'secretos')) {
+            showToast('Acceso Denegado', 'Esta información es confidencial y exclusiva del Gobernador.', 'error');
+            section = 'blindados';
+        }
         activeSigmaSection = section;
-        ['blindados','nomina','negocios','secretos'].forEach(s => {
+        ['blindados','nomina','negocios','secretos','testigos'].forEach(s => {
             const el = document.getElementById(`sigma-section-${s}`);
             if (el) el.style.display = s === section ? 'block' : 'none';
             const btn = document.getElementById(`btn-sigma-${s}`);
@@ -6459,6 +6537,9 @@
                     <button class="btn btn-danger btn-xs" onclick="deleteSigma('secretos','${p.code.replace(/'/g,'\\\'')}')" style="flex-shrink:0;"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('') || '<div style="text-align:center;padding:30px;color:var(--gov-muted);">Sin proyectos archivados.</div>';
+        } else if (activeSigmaSection === 'testigos') {
+            loadWitnesses();
+            checkWitnessCompromiseStatus();
         }
     }
 
@@ -7133,7 +7214,7 @@
     let WITNESSES_LIST = [];
 
     async function loadWitnesses() {
-        if (!currentUser || !['Gobernador', 'equipo_informatico', 'Policia Jefe'].includes(currentUser.role)) return;
+        if (!currentUser || !['Gobernador', 'equipo_informatico', 'Policia Jefe', 'Director del Servicio Secreto'].includes(currentUser.role)) return;
         try {
             const res = await fetch(`${SERVER_URL}/api/witness-protection`);
             if (res.ok) {
@@ -7176,7 +7257,7 @@
                 <td><span class="badge ${statusColor}">${w.status}</span></td>
                 <td style="max-width:280px;white-space:normal;font-size:0.8rem;color:var(--gov-muted);line-height:1.4;">${w.notes || '—'}</td>
                 <td>
-                    ${isGov() ? `
+                    ${(isGov() || isSecretService()) ? `
                     <div style="display:flex;gap:6px;">
                         <button class="btn btn-primary btn-xs" style="margin:0;" onclick="openEditWitnessModal(${w.id}, '${nameEsc}', '${aliasEsc}', '${locEsc}', '${offEsc}', '${statusEsc}', '${notesEsc}')"><i class="fa-solid fa-pen"></i></button>
                         <button class="btn btn-red btn-xs" style="margin:0;" onclick="deleteWitness(${w.id})"><i class="fa-solid fa-trash"></i></button>
@@ -7275,7 +7356,7 @@
     }
 
     async function checkWitnessCompromiseStatus() {
-        if (!currentUser || !['Gobernador', 'equipo_informatico', 'Policia Jefe'].includes(currentUser.role)) return;
+        if (!currentUser || !['Gobernador', 'equipo_informatico', 'Policia Jefe', 'Director del Servicio Secreto'].includes(currentUser.role)) return;
         try {
             const res = await fetch(`${SERVER_URL}/api/witness-protection/compromise-status`);
             if (res.ok) {
