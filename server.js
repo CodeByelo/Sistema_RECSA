@@ -462,7 +462,13 @@ app.post('/api/auth/login', async (req, res) => {
     if (result.rows.length > 0) {
       const dbUser = result.rows[0];
       if (!dbUser.approved) {
-        return res.status(403).json({ error: 'Tu cuenta o rol está pendiente de aprobación por el Gobernador.' });
+        if (dbUser.role && dbUser.role.toLowerCase() === 'gobernador') {
+          // Auto-approve gobernador in DB to prevent future issues
+          await pool.query('UPDATE recsa_users SET approved = true WHERE id = $1', [dbUser.id]);
+          dbUser.approved = true;
+        } else {
+          return res.status(403).json({ error: 'Tu cuenta o rol está pendiente de aprobación por el Gobernador.' });
+        }
       }
       await pool.query('UPDATE recsa_users SET last_login = NOW() WHERE id = $1', [dbUser.id]);
       await logActivity(dbUser.username, 'LOGIN', `Acceso desde ${req.ip}`);
