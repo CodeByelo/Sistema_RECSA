@@ -1249,6 +1249,8 @@
                         <option value="Inspector Fiscal">Inspector Fiscal RECSA</option>
                         <option value="Banco RECSA">Banco RECSA — Créditos</option>
                         <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
+                        <option value="Miembro Gubernamental">Miembro Gubernamental</option>
+                        <option value="Agente Especial">Agente Especial</option>
                         <option value="Gobernador">Gobernador (Acceso Total)</option>
                         <option value="Civil">Civil — Perfil propio</option>
                     </select>
@@ -1301,6 +1303,8 @@
                         <option value="Inspector Fiscal">Inspector Fiscal RECSA</option>
                         <option value="Banco RECSA">Banco RECSA — Créditos</option>
                         <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
+                        <option value="Miembro Gubernamental">Miembro Gubernamental</option>
+                        <option value="Agente Especial">Agente Especial</option>
                         <option value="Gobernador">Gobernador (Acceso Total)</option>
                         <option value="Civil">Civil — Perfil propio</option>
                     </select>
@@ -1829,6 +1833,8 @@
                                             <option value="LSSD">Oficial de Sheriff (LSSD)</option>
                                             <option value="SAMD">Médico / Paramédico (SAMD)</option>
                                             <option value="Juez">Juez del Estado</option>
+                                            <option value="Miembro Gubernamental">Miembro Gubernamental</option>
+                                            <option value="Agente Especial">Agente Especial</option>
                                             <option value="Gobernador">Gobernador / Staff</option>
                                         </select>
                                     </div>
@@ -6185,6 +6191,11 @@
         if (r === 'juez') return '<span class="badge badge-purple"><i class="fa-solid fa-gavel"></i> Juez</span>';
         if (r.includes('inspector')) return '<span class="badge badge-green"><i class="fa-solid fa-magnifying-glass-dollar"></i> Inspector</span>';
         if (r.includes('banco')) return '<span class="badge badge-green"><i class="fa-solid fa-building-columns"></i> Banco</span>';
+        if (r.includes('miembro gubernamental')) return '<span class="badge badge-gold"><i class="fa-solid fa-building-flag"></i> Miembro Gub.</span>';
+        if (r.includes('agente especial')) return '<span class="badge badge-purple"><i class="fa-solid fa-user-secret"></i> Agente Especial</span>';
+        if (r === 'equipo_informatico' || r.includes('inform')) return '<span class="badge badge-gray"><i class="fa-solid fa-terminal"></i> IT</span>';
+        if (r === 'samd') return '<span class="badge badge-green"><i class="fa-solid fa-kit-medical"></i> SAMD</span>';
+        if (r === 'civil') return '<span class="badge badge-gray"><i class="fa-solid fa-user"></i> Civil</span>';
         return `<span class="badge badge-gray">${role}</span>`;
     }
 
