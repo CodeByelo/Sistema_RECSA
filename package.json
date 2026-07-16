@@ -1,5 +1,5 @@
 {
-  "name": "sistema-recsa-backend",
+  "name": "recsa-backend",
   "version": "1.0.0",
   "description": "Backend de sincronización con Supabase para el Sistema RECSA",
   "main": "server.js",

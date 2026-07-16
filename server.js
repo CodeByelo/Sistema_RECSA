@@ -217,9 +217,30 @@ async function initDb() {
       );
     `);
 
+    // 13. Bail Requests (NEW)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recsa_bail_requests (
+        id SERIAL PRIMARY KEY,
+        citizen_id INTEGER REFERENCES recsa_citizens(id) ON DELETE CASCADE,
+        citizen_name VARCHAR(255) NOT NULL,
+        amount NUMERIC NOT NULL,
+        reason TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'Pendiente',
+        requested_by VARCHAR(255) NOT NULL,
+        requested_date VARCHAR(100) NOT NULL,
+        resolved_by VARCHAR(255),
+        resolved_date VARCHAR(100),
+        resolution_notes TEXT
+      );
+    `);
+
     // Migraciones: Añadir columna reason si no existe
     await client.query(`
       ALTER TABLE recsa_loan_requests ADD COLUMN IF NOT EXISTS reason TEXT;
+    `);
+
+    await client.query(`
+      ALTER TABLE recsa_users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT FALSE;
     `);
 
     console.log('Tablas creadas/verificadas correctamente.');
@@ -229,9 +250,12 @@ async function initDb() {
     if (parseInt(userCheck.rows[0].count) === 0) {
       console.log('Sembrando cuenta administradora GobernadorH...');
       await client.query(`
-        INSERT INTO recsa_users (username, password, role, name, department)
-        VALUES ($1, $2, $3, $4, $5)
-      `, ['GobernadorH', 'Harrison1910**', 'Gobernador', 'Gobernador Harrison', 'Despacho del Gobernador']);
+        INSERT INTO recsa_users (username, password, role, name, department, approved)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, ['GobernadorH', 'Harrison1910**', 'Gobernador', 'Gobernador Harrison', 'Despacho del Gobernador', true]);
+    } else {
+      // Garantizar que la cuenta de GobernadorH existente esté aprobada
+      await client.query("UPDATE recsa_users SET approved = TRUE WHERE username = 'GobernadorH'");
     }
 
     // Seed landing config if empty
@@ -259,17 +283,17 @@ async function initDb() {
       await pool.query(`INSERT INTO recsa_config (key, value) VALUES ('landing_config', $1)`, [JSON.stringify(defaultConfig)]);
     }
 
-    // Seed witness compromised config if empty
-    const witnessCompCheck = await client.query("SELECT COUNT(*) FROM recsa_config WHERE key = 'witness_compromised'");
-    if (parseInt(witnessCompCheck.rows[0].count) === 0) {
-      console.log('Sembrando configuración de brecha de testigos...');
-      const defaultWitnessComp = { compromised: false, timestamp: null, detail: null };
-      await pool.query(`INSERT INTO recsa_config (key, value) VALUES ('witness_compromised', $1)`, [JSON.stringify(defaultWitnessComp)]);
-    }
+    // Reset witness compromised config on server startup
+    console.log('Restableciendo estado de brecha de testigos en inicio del servidor...');
+    const defaultWitnessComp = { compromised: false, timestamp: null, detail: null };
+    await pool.query(
+      "INSERT INTO recsa_config (key, value) VALUES ('witness_compromised', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      [JSON.stringify(defaultWitnessComp)]
+    );
 
-    // Seed witness protection if empty
-    const witnessCheck = await client.query("SELECT COUNT(*) FROM recsa_witness_protection");
-    if (parseInt(witnessCheck.rows[0].count) === 0) {
+    // Seed witness protection if empty and not seeded before
+    const witnessSeededCheck = await client.query("SELECT COUNT(*) FROM recsa_config WHERE key = 'witness_seeded'");
+    if (parseInt(witnessSeededCheck.rows[0].count) === 0) {
       console.log('Sembrando testigos protegidos iniciales...');
       await client.query(`
         INSERT INTO recsa_witness_protection (witness_name, alias, safehouse_location, assigned_officers, status, notes)
@@ -278,6 +302,7 @@ async function initDb() {
         ('Karen Drake', 'T-100', 'Apartamento 3B - El Burro Heights', 'Oficial Jones (LSPD)', 'Seguridad Media', 'Proporcionó información sobre el cartel de Madrazo.'),
         ('Brad Snider', 'BradS', 'Cementerio de Ludendorff (Fingido)', 'Agente Steve Haines (FIB)', 'Reubicado', 'Simulación de muerte para cobertura de testigo.')
       `);
+      await client.query("INSERT INTO recsa_config (key, value) VALUES ('witness_seeded', 'true')");
     }
 
     // NOTE: No citizen seeds — citizens are managed exclusively via the admin panel ("Data de Ciudadanos").
@@ -297,7 +322,7 @@ async function initDb() {
       console.log(`[SIGMA] Código inicial generado: ${firstCode}`);
     }
 
-    console.log('Sistema RECSA v4.0 inicializado con éxito.');
+    console.log('RECSA v4.0 inicializado con éxito.');
   } catch (error) {
     console.error('Error durante la inicialización:', error.message);
   } finally {
@@ -402,6 +427,14 @@ initDb();
 // ============================================================
 // HELPERS
 // ============================================================
+function requireGobernador(req, res, next) {
+  const role = req.headers['x-user-role'];
+  if (role !== 'Gobernador') {
+    return res.status(403).json({ error: 'Solo el Gobernador puede realizar esta acción.' });
+  }
+  next();
+}
+
 async function logActivity(username, action, detail = '') {
   try {
     await pool.query('INSERT INTO recsa_activity_log (username, action, detail) VALUES ($1, $2, $3)', [username, action, detail]);
@@ -415,11 +448,14 @@ app.post('/api/auth/login', async (req, res) => {
   const { user, pass } = req.body;
   try {
     const result = await pool.query(
-      'SELECT id, username, role, name, badge, department, citizen_id FROM recsa_users WHERE username = $1 AND password = $2',
+      'SELECT id, username, role, name, badge, department, citizen_id, approved FROM recsa_users WHERE username = $1 AND password = $2',
       [user, pass]
     );
     if (result.rows.length > 0) {
       const dbUser = result.rows[0];
+      if (!dbUser.approved) {
+        return res.status(403).json({ error: 'Tu cuenta o rol está pendiente de aprobación por el Gobernador.' });
+      }
       await pool.query('UPDATE recsa_users SET last_login = NOW() WHERE id = $1', [dbUser.id]);
       await logActivity(dbUser.username, 'LOGIN', `Acceso desde ${req.ip}`);
       res.json({
@@ -553,7 +589,7 @@ app.put('/api/role-requests/:id', async (req, res) => {
 
     if (status === 'Aprobada') {
       await pool.query(
-        'UPDATE recsa_users SET role = $1, badge = $2, department = $3 WHERE id = $4',
+        'UPDATE recsa_users SET role = $1, badge = $2, department = $3, approved = true WHERE id = $4',
         [request.requested_role, request.requested_badge, request.requested_department, request.user_id]
       );
       await logActivity(resolved_by, 'ROLE_REQUEST_APPROVED', `Aprobada solicitud de rango de ${request.username} a ${request.requested_role}`);
@@ -620,12 +656,68 @@ app.put('/api/citizen-reports/:id', async (req, res) => {
   }
 });
 
+// ============================================================
+// API: SOLICITUDES DE FIANZAS
+// ============================================================
+app.get('/api/bails', async (req, res) => {
+  const { citizenId } = req.query;
+  try {
+    let result;
+    if (citizenId) {
+      result = await pool.query('SELECT * FROM recsa_bail_requests WHERE citizen_id = $1 ORDER BY id DESC', [citizenId]);
+    } else {
+      result = await pool.query('SELECT * FROM recsa_bail_requests ORDER BY id DESC');
+    }
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/bails', async (req, res) => {
+  const { citizenId, citizenName, amount, reason, requestedBy } = req.body;
+  if (!citizenId || !citizenName || !amount || !reason || !requestedBy) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO recsa_bail_requests (citizen_id, citizen_name, amount, reason, requested_by, requested_date)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [citizenId, citizenName, amount, reason, requestedBy, new Date().toLocaleDateString('es-ES')]
+    );
+    await logActivity(requestedBy, 'BAIL_REQUEST_SUBMITTED', `Solicitud de fianza para ${citizenName} por $${amount}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/bails/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status, resolved_by, resolution_notes } = req.body;
+  if (!status || !resolved_by) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+  }
+  try {
+    await pool.query(
+      `UPDATE recsa_bail_requests 
+       SET status = $1, resolved_by = $2, resolved_date = $3, resolution_notes = $4
+       WHERE id = $5`,
+      [status, resolved_by, new Date().toLocaleDateString('es-ES'), resolution_notes || '', id]
+    );
+    await logActivity(resolved_by, 'BAIL_REQUEST_RESOLVED', `Fianza ID ${id} marcada como ${status}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============================================================================
 // API: USUARIOS (Solo Gobernador)
 // ============================================================
 app.get('/api/users', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, username, role, name, badge, department, created_at, last_login FROM recsa_users ORDER BY id ASC');
+    const result = await pool.query('SELECT id, username, role, name, badge, department, created_at, last_login, approved FROM recsa_users ORDER BY id ASC');
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -636,8 +728,8 @@ app.post('/api/users', async (req, res) => {
   const { username, password, role, name, badge, department } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO recsa_users (username, password, role, name, badge, department) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [username, password, role, name, badge || null, department || null]
+      'INSERT INTO recsa_users (username, password, role, name, badge, department, approved) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [username, password, role, name, badge || null, department || null, true]
     );
     res.json({ success: true, id: result.rows[0].id });
   } catch (error) {
@@ -649,7 +741,19 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  const { approvedBy } = req.body;
+  try {
+    await pool.query('UPDATE recsa_users SET approved = true WHERE id = $1', [id]);
+    await logActivity(approvedBy || 'Gobernador', 'USER_APPROVED', `Aprobado acceso a usuario ID ${id}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/users/:id', requireGobernador, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM recsa_users WHERE id = $1', [id]);
@@ -747,6 +851,9 @@ app.get('/api/citizens', async (req, res) => {
 app.post('/api/citizens', async (req, res) => {
   const c = req.body;
   try {
+    const checkCitizen = await pool.query('SELECT name FROM recsa_citizens WHERE id = $1', [c.id]);
+    const isNewCitizen = checkCitizen.rows.length === 0;
+
     await pool.query(`
       INSERT INTO recsa_citizens (id, name, veraz, job, phone, bank, fines, loan_limit, police_status, nu, birthdate, gender, height, eyes, weapon_license, driver_license, commercial_license, address, nationality, avatar, businesses, properties, vehicles, payments)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
@@ -764,14 +871,47 @@ app.post('/api/citizens', async (req, res) => {
       JSON.stringify(c.businesses || []), JSON.stringify(c.properties || []),
       JSON.stringify(c.vehicles || []), JSON.stringify(c.payments || [])
     ]);
+
     await autoCalculateCitizenRisk(pool, c.id);
+
+    if (isNewCitizen) {
+      const parts = c.name.trim().split(/\s+/);
+      let baseUsername = '';
+      if (parts.length >= 2) {
+        const firstLetter = parts[0].substring(0, 1).toLowerCase();
+        const lastName = parts[parts.length - 1].toLowerCase();
+        baseUsername = firstLetter + lastName;
+      } else {
+        baseUsername = parts[0].toLowerCase();
+      }
+      baseUsername = baseUsername.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+      if (!baseUsername) baseUsername = 'usuario';
+
+      let username = baseUsername;
+      let counter = 1;
+      let usernameCheck = await pool.query('SELECT id FROM recsa_users WHERE username = $1', [username]);
+      while (usernameCheck.rows.length > 0) {
+        username = baseUsername + counter;
+        usernameCheck = await pool.query('SELECT id FROM recsa_users WHERE username = $1', [username]);
+        counter++;
+      }
+
+      const defaultPassword = String(c.id);
+      await pool.query(
+        `INSERT INTO recsa_users (username, password, role, name, citizen_id, approved)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [username, defaultPassword, 'Civil', c.name, c.id, true]
+      );
+      console.log(`[AUTO-USER] Created automatic user for citizen ${c.name}: username=${username}, password=${defaultPassword}`);
+    }
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.delete('/api/citizens/:id', async (req, res) => {
+app.delete('/api/citizens/:id', requireGobernador, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM recsa_citizens WHERE id = $1', [id]);
@@ -925,7 +1065,7 @@ app.post('/api/criminal-records', async (req, res) => {
   }
 });
 
-app.delete('/api/criminal-records/:id', async (req, res) => {
+app.delete('/api/criminal-records/:id', requireGobernador, async (req, res) => {
   const { id } = req.params;
   try {
     const recordRes = await pool.query('SELECT citizen_id FROM recsa_criminal_records WHERE id = $1', [id]);
@@ -965,7 +1105,7 @@ app.post('/api/news', async (req, res) => {
   }
 });
 
-app.delete('/api/news/:id', async (req, res) => {
+app.delete('/api/news/:id', requireGobernador, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM recsa_news WHERE id = $1', [id]);
@@ -1206,7 +1346,7 @@ app.put('/api/witness-protection/:id', async (req, res) => {
 });
 
 // DELETE witness record
-app.delete('/api/witness-protection/:id', async (req, res) => {
+app.delete('/api/witness-protection/:id', requireGobernador, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM recsa_witness_protection WHERE id = $1', [id]);

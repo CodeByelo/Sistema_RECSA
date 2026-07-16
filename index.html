@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Gubernamental RECSA | San Andreas</title>
+    <title>RECSA | Estado de San Andreas</title>
     <meta name="description" content="Plataforma oficial de control gubernamental del Estado de San Andreas. RECSA — Red de Control de Solvencia y Auditoría.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -323,7 +323,7 @@
         }
         .hero-section::before {
             content: ''; position: absolute; inset: 0;
-            background: url('./assets/campana_discurso.png') center/cover no-repeat; opacity: 0.06;
+            background: var(--hero-bg, url('./assets/campana_discurso.png')) center/cover no-repeat; opacity: 0.06;
             filter: grayscale(100%);
         }
         .hero-inner { max-width: 1300px; margin: 0 auto; position: relative; z-index: 1; animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -984,7 +984,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Nacionalidad</label>
-                    <input type="text" id="c-nationality" class="form-control" placeholder="ej. San Andresa">
+                    <input type="text" id="c-nationality" class="form-control" placeholder="ej. Americana">
                 </div>
             </div>
             <div class="form-row">
@@ -1102,7 +1102,7 @@
                     <span style="font-size:0.68rem; color:var(--gov-muted);">Establecida por ley penal</span>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Prisión (minutos RP)</label>
+                    <label class="form-label">Prisión ((Minutos))</label>
                     <input type="number" id="crime-jail" class="form-control" placeholder="0" value="0">
                     <span style="font-size:0.68rem; color:var(--gov-muted);">Establecida por ley penal</span>
                 </div>
@@ -1273,6 +1273,33 @@
     </div>
 </div>
 
+<!-- Modal: SOLICITAR FIANZA -->
+<div id="modal-bail" class="modal-overlay">
+    <div class="modal-box" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Solicitar Fianza Judicial</h3>
+            <button class="btn-modal-close" onclick="closeModal('modal-bail')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="bail-citizen-info" style="background:var(--gov-off);border-radius:8px;padding:12px;margin-bottom:16px;font-weight:700;color:var(--gov-navy);"></div>
+            <input type="hidden" id="bail-citizen-id">
+            <input type="hidden" id="bail-citizen-name">
+            <div class="form-group">
+                <label class="form-label">Monto de Fianza Solicitado ($)</label>
+                <input type="number" id="bail-amount" class="form-control" placeholder="ej. 25000" min="100">
+            </div>
+            <div class="form-group" style="margin-top: 12px; margin-bottom: 12px;">
+                <label class="form-label">Motivo y Justificación de la Fianza</label>
+                <textarea id="bail-reason" class="form-control" rows="4" placeholder="Describe los cargos, la situación del arresto o los motivos humanitarios por los que solicitas la fianza..." required></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-bail')">Cancelar</button>
+            <button class="btn btn-green" onclick="submitBail()"><i class="fa-solid fa-paper-plane"></i> Enviar Solicitud</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: REGISTRAR/EDITAR TESTIGO -->
 <div id="modal-witness" class="modal-overlay">
     <div class="modal-box" style="max-width: 550px;">
@@ -1340,8 +1367,8 @@
             <nav class="landing-nav">
                 <a href="#candidato">Gobernación</a>
                 <a href="#noticias">Noticias</a>
-                <a href="#" onclick="document.getElementById('modal-login').classList.add('open'); document.getElementById('login-user').focus();">Portal Ciudadano</a>
-                <button class="btn btn-gold btn-sm" onclick="document.getElementById('modal-login').classList.add('open'); document.getElementById('login-user').focus();">
+                <a href="#" onclick="openLoginModal(); event.preventDefault();">Portal Ciudadano</a>
+                <button class="btn btn-gold btn-sm" onclick="openLoginModal()">
                     <i class="fa-solid fa-right-to-bracket"></i> Acceso Restringido
                 </button>
             </nav>
@@ -1354,7 +1381,7 @@
             <h1 id="hero-title-el" class="hero-title">Sistema Gubernamental de Control Cívico</h1>
             <p id="hero-desc-el" class="hero-desc">RECSA — Red de Control de Solvencia y Auditoría. Plataforma oficial del Estado para la gestión integral de los ciudadanos de San Andreas.</p>
             <div class="hero-actions">
-                <button class="btn btn-gold btn-lg" onclick="document.getElementById('modal-login').classList.add('open'); document.getElementById('login-user').focus();">
+                <button class="btn btn-gold btn-lg" onclick="openLoginModal()">
                     <i class="fa-solid fa-shield-halved"></i> Acceso al Sistema
                 </button>
                 <a href="#candidato" class="btn btn-ghost-white btn-lg">
@@ -1428,7 +1455,7 @@
                 <div class="intranet-brand">
                     <div class="intranet-brand-icon"><i class="fa-solid fa-landmark"></i></div>
                     <div class="intranet-brand-text">
-                        <strong>SISTEMA GUBERNAMENTAL RECSA</strong>
+                        <strong>RECSA</strong>
                         <span>Intranet — Estado de San Andreas</span>
                     </div>
                 </div>
@@ -1481,6 +1508,10 @@
                     <span class="sb-icon"><i class="fa-solid fa-briefcase"></i></span>
                     <span>Solicitudes de Empleo</span>
                 </button>
+                <button class="sidebar-btn" id="sb-civil-bails" onclick="switchTab('civil-bails')" style="display:none;">
+                    <span class="sb-icon"><i class="fa-solid fa-handcuffs"></i></span>
+                    <span>Solicitud de Fianza</span>
+                </button>
                 <!-- Police -->
                 <div class="sidebar-section-label" id="sb-label-police">Seguridad</div>
                 <button class="sidebar-btn" id="sb-mdc" onclick="switchTab('mdc')">
@@ -1491,6 +1522,11 @@
                     <span class="sb-icon"><i class="fa-solid fa-gavel"></i></span>
                     <span>Órdenes Judiciales</span>
                     <span class="sb-badge" id="sb-warrants-badge" style="display:none;">0</span>
+                </button>
+                <button class="sidebar-btn" id="sb-bails" onclick="switchTab('bails')">
+                    <span class="sb-icon"><i class="fa-solid fa-scale-balanced"></i></span>
+                    <span>Solicitudes de Fianzas</span>
+                    <span class="sb-badge" id="sb-bails-badge" style="display:none;">0</span>
                 </button>
                 <!-- Finance -->
                 <div class="sidebar-section-label" id="sb-label-finance">Finanzas</div>
@@ -1733,15 +1769,66 @@
                                             <!-- Dynamic requests rows -->
                                         </tbody>
                                     </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- TAB: CIVIL BAILS (SOLICITUDES DE FIANZA CIUDADANA) -->
+<div id="tab-civil-bails" class="tab-content">
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+            <h2><i class="fa-solid fa-scale-balanced" style="color:var(--gov-blue);"></i> Solicitud de Fianza</h2>
+            <p>Envía y realiza el seguimiento de tus solicitudes de fianza</p>
+        </div>
+        <button class="btn btn-green" onclick="openBailModalCivil()"><i class="fa-solid fa-circle-plus"></i> Solicitar Fianza</button>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>Historial de Solicitudes de Fianza</h3></div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Fecha</th><th>Monto</th><th>Motivo / Justificación</th><th>Estado</th><th>Resolución</th></tr>
+                    </thead>
+                    <tbody id="civilian-bails-tbody">
+                        <!-- Dynamic bails -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <!-- TAB: SSC — PADRÓN CIUDADANO -->
-                <div id="tab-ssc" class="tab-content active">
+<!-- TAB: GESTIÓN DE FIANZAS JUDICIALES (Gobernador / Juez) -->
+<div id="tab-bails" class="tab-content">
+    <div class="page-header">
+        <h2><i class="fa-solid fa-scale-balanced" style="color:var(--gov-blue);"></i> Gestión de Fianzas Judiciales</h2>
+        <p>Aprobación y resolución de solicitudes de fianza presentadas por ciudadanos</p>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="filterBails('all')">Todas</button>
+        <button class="btn btn-sm" style="background:var(--status-orange-bg);color:#b45309;border:1px solid var(--status-orange);" onclick="filterBails('Pendiente')">● Pendientes</button>
+        <button class="btn btn-sm" style="background:var(--status-green-bg);color:#047857;border:1px solid var(--status-green);" onclick="filterBails('Aprobada')">● Aprobadas</button>
+        <button class="btn btn-sm" style="background:var(--status-red-bg);color:#b91c1c;border:1px solid var(--status-red);" onclick="filterBails('Rechazada')">● Rechazadas</button>
+    </div>
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Fecha</th><th>Ciudadano</th><th>Monto</th><th>Motivo</th><th>Estado</th><th>Auditoría / Nota</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="bails-tbody">
+                    <!-- Dynamic bails list -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: SSC — PADRÓN CIUDADANO -->
+<div id="tab-ssc" class="tab-content active">
                     <div class="page-header">
                         <h2><i class="fa-solid fa-database" style="color:var(--gov-blue);"></i> Data de Ciudadanos</h2>
                         <p>Registro civil oficial — Padrón completo de ciudadanos del Estado de San Andreas. Los entes públicos autorizados pueden registrar y consultar perfiles ciudadanos aquí.</p>
@@ -1957,6 +2044,10 @@
                                     <label class="form-label">Texto de la Insignia</label>
                                     <input type="text" id="lc-heroBadge" class="form-control">
                                 </div>
+                                <div class="form-group">
+                                    <label class="form-label">Imagen de Fondo (URL)</label>
+                                    <input type="text" id="lc-heroBg" class="form-control" placeholder="ej. ./assets/hero_bg.png">
+                                </div>
                             </div>
                         </div>
                         <div class="card">
@@ -1977,6 +2068,10 @@
                                 <div class="form-group">
                                     <label class="form-label">Descripción</label>
                                     <textarea id="lc-candidateDesc1" class="form-control" rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Foto del Gobernador (URL)</label>
+                                    <input type="text" id="lc-candidateImg" class="form-control" placeholder="ej. ./assets/candidate.png">
                                 </div>
                             </div>
                         </div>
@@ -2050,7 +2145,7 @@
                         <div class="table-wrap">
                             <table>
                                 <thead>
-                                    <tr><th>ID</th><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Placa</th><th>Departamento</th><th>Último acceso</th><th>Acciones</th></tr>
+                                    <tr><th>ID</th><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Placa</th><th>Departamento</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr>
                                 </thead>
                                 <tbody id="users-tbody"></tbody>
                             </table>
@@ -2213,7 +2308,7 @@
                             <h2><i class="fa-solid fa-user-shield" style="color:var(--gov-blue);"></i> Protección a Testigos</h2>
                             <p>Registro nacional de identidades protegidas y pisos franco de resguardo</p>
                         </div>
-                        <button class="btn btn-primary" onclick="openAddWitnessModal()"><i class="fa-solid fa-plus"></i> Registrar Testigo Protegido</button>
+                        <button class="btn btn-primary" id="btn-add-witness" onclick="openAddWitnessModal()"><i class="fa-solid fa-plus"></i> Registrar Testigo Protegido</button>
                     </div>
 
                     <!-- BREACH ALERT BANNER (Compromised Database Indicator) -->
@@ -2503,6 +2598,8 @@
     let NEWS = [];
     let WARRANTS = [];
     let SYSTEM_USERS = [];
+    let BAILS = [];
+    let currentBailsFilter = 'all';
     // Parsed Penal Code Crimes List
     const PENAL_CODE_CRIMES = [
   {
@@ -3430,6 +3527,31 @@
     }
 
     function switchTab(tabName) {
+        if (!currentUser) return;
+        const role = (currentUser.role || '').toLowerCase();
+
+        // Enforce role-based tab access
+        if (tabName === 'users' && !isGov()) {
+            showToast('Acceso Denegado', 'Solo el Gobernador puede gestionar usuarios.', 'error');
+            return;
+        }
+        if ((tabName === 'sigma' || tabName === 'witness-protection') && !isITOrGov()) {
+            showToast('Acceso Denegado', 'Sección clasificada. Acceso restringido.', 'error');
+            return;
+        }
+        if (tabName === 'bails' && !(isGov() || isJudge() || isPolice())) {
+            showToast('Acceso Denegado', 'Solo miembros autorizados del Gobierno/Justicia pueden gestionar fianzas.', 'error');
+            return;
+        }
+        if (['ssc', 'solvency', 'mdc', 'warrants', 'loans', 'landing', 'citizen-reports'].includes(tabName) && role === 'civil') {
+            showToast('Acceso Denegado', 'Acceso restringido a personal gubernamental.', 'error');
+            return;
+        }
+        if (['civilian', 'civil-reports', 'civil-loans', 'civil-jobs', 'civil-bails'].includes(tabName) && role !== 'civil') {
+            showToast('Acceso Denegado', 'Acceso exclusivo para ciudadanos.', 'error');
+            return;
+        }
+
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
         const tab = document.getElementById(`tab-${tabName}`);
@@ -3440,6 +3562,7 @@
         if (tabName === 'solvency') { renderSolvencyTable(); loadSolvencyStats(); }
         if (tabName === 'mdc') { renderMDCResults(); }
         if (tabName === 'warrants') { renderWarrantsTable(); }
+        if (tabName === 'bails') { loadBailsTable(); }
         if (tabName === 'loans') { 
             renderLoansTable(); 
             loadLoansStats(); 
@@ -3453,7 +3576,7 @@
         if (tabName === 'users') { renderUsersTable(); renderGovRoleRequests(); }
         if (tabName === 'sigma') { renderSigmaSection(); }
         if (tabName === 'ssc') { renderCitizenTable(); }
-        if (tabName === 'civilian' || tabName === 'civil-reports' || tabName === 'civil-loans' || tabName === 'civil-jobs') { renderCivilianDashboard(); }
+        if (tabName === 'civilian' || tabName === 'civil-reports' || tabName === 'civil-loans' || tabName === 'civil-jobs' || tabName === 'civil-bails') { renderCivilianDashboard(); }
         if (tabName === 'witness-protection') { loadWitnesses(); checkWitnessCompromiseStatus(); }
     }
 
@@ -4112,6 +4235,7 @@
 
         await loadCivilianReportsTable();
         await loadRoleRequestsTable(requestsTbody);
+        renderCivilianBailsTable(citizenId);
     }
 
     async function loadRoleRequestsTable(tbody) {
@@ -4335,7 +4459,7 @@
     async function syncAll() {
         if (!serverConnected) return;
         try {
-            const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12] = await Promise.all([
+            const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13] = await Promise.all([
                 fetch(`${SERVER_URL}/api/citizens`),
                 fetch(`${SERVER_URL}/api/criminal-records`),
                 fetch(`${SERVER_URL}/api/loans`),
@@ -4347,7 +4471,8 @@
                 fetch(`${SERVER_URL}/api/config/classified_investigated_businesses`),
                 fetch(`${SERVER_URL}/api/config/classified_secret_projects`),
                 fetch(`${SERVER_URL}/api/users`),
-                fetch(`${SERVER_URL}/api/config/classified_payrolls`)
+                fetch(`${SERVER_URL}/api/config/classified_payrolls`),
+                fetch(`${SERVER_URL}/api/bails`)
             ]);
             if (r1.ok) CITIZENS = await r1.json();
             if (r2.ok) CRIMINAL_RECORDS = await r2.json();
@@ -4360,6 +4485,7 @@
             if (r9.ok) { const d = await r9.json(); INVESTIGATED_BUSINESSES = d || []; }
             if (r10.ok) { const d = await r10.json(); SECRET_PROJECTS = d || []; }
             if (r11.ok) SYSTEM_USERS = await r11.json();
+            if (r13 && r13.ok) BAILS = await r13.json();
             
             if (r12.ok) {
                 const payrollsData = await r12.json();
@@ -4606,7 +4732,11 @@
     function canSeeLoansMgmt() { return isGov() || isInspector() || isBanco(); }
     function canManagePortal() { return isGov() || isInspector(); }
     function canManageUsers() { return isGov(); }
-    function canManageSigma() { return isGov(); }
+    function isITOrGov() {
+        const r = getRole();
+        return r === 'gobernador' || r === 'equipo_informatico' || r === 'informatica';
+    }
+    function canManageSigma() { return isITOrGov(); }
 
     // ============================================================
     // INTRANET SETUP
@@ -4632,6 +4762,7 @@
             show('sb-civil-reports', true);
             show('sb-civil-loans', true);
             show('sb-civil-jobs', true);
+            show('sb-civil-bails', true);
             
             // Non-civil
             show('sb-label-ssc', false);
@@ -4640,6 +4771,7 @@
             show('sb-label-police', false);
             show('sb-mdc', false);
             show('sb-warrants', false);
+            show('sb-bails', false);
             show('sb-label-finance', false);
             show('sb-loans', false);
             show('sb-label-admin', false);
@@ -4647,6 +4779,8 @@
             show('sb-citizen-reports', false);
             show('sb-users', false);
             show('sb-sigma', false);
+            show('sb-sigma-code-btn', false);
+            show('sb-witness-protection', false);
             
             switchTab('civilian');
         } else {
@@ -4656,6 +4790,7 @@
             show('sb-civil-reports', false);
             show('sb-civil-loans', false);
             show('sb-civil-jobs', false);
+            show('sb-civil-bails', false);
 
             show('sb-label-ssc', true);
             show('sb-ssc', true);
@@ -4663,6 +4798,7 @@
             show('sb-label-police', canSeeMDC());
             show('sb-mdc', canSeeMDC());
             show('sb-warrants', canSeeMDC() || canSeeJudicial());
+            show('sb-bails', isGov() || isJudge() || isPolice());
             show('sb-label-finance', canSeeLoansMgmt() || isGov());
             show('sb-loans', canSeeLoansMgmt());
             show('sb-label-admin', canManagePortal());
@@ -4672,17 +4808,19 @@
             show('sb-sigma', canManageSigma());
             
             // Show SIGMA code button for IT team and Governor
-            const isIT = (currentUser.role || '').toLowerCase() === 'equipo_informatico';
-            show('sb-sigma-code-btn', isIT || isGov());
+            show('sb-sigma-code-btn', isITOrGov());
 
             // Show witness protection button for Governor and authorized security roles
-            show('sb-witness-protection', isGov() || isIT || (currentUser.role === 'Policia Jefe'));
+            show('sb-witness-protection', isITOrGov());
 
             switchTab('ssc');
         }
 
         const btnAdd = document.getElementById('btn-add-citizen');
         if (btnAdd) btnAdd.style.display = canEditCitizens() ? 'inline-flex' : 'none';
+
+        const btnAddWitness = document.getElementById('btn-add-witness');
+        if (btnAddWitness) btnAddWitness.style.display = isGov() ? 'inline-flex' : 'none';
 
         updatePendingBadges();
         renderLandingPublic();
@@ -4967,7 +5105,10 @@
         const hasConfirmed = await customConfirm('Eliminar Ciudadano', '¿Eliminar este ciudadano del sistema? Esta acción no se puede revertir.', { type: 'danger', icon: 'fa-solid fa-user-minus', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
-            await fetch(`${SERVER_URL}/api/citizens/${id}`, { method: 'DELETE' });
+            await fetch(`${SERVER_URL}/api/citizens/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-Role': currentUser ? currentUser.role : '' }
+            });
             CITIZENS = CITIZENS.filter(c => c.id !== id);
             renderCitizenTable();
             document.getElementById('citizen-detail-panel').style.display = 'none';
@@ -5332,7 +5473,10 @@
         const hasConfirmed = await customConfirm('Eliminar Antecedente', '¿Eliminar este antecedente?', { type: 'danger', icon: 'fa-solid fa-gavel', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
-            await fetch(`${SERVER_URL}/api/criminal-records/${id}`, { method: 'DELETE' });
+            await fetch(`${SERVER_URL}/api/criminal-records/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-Role': currentUser ? currentUser.role : '' }
+            });
             CRIMINAL_RECORDS = CRIMINAL_RECORDS.filter(r => r.id !== id);
             showToast('Eliminado', 'Antecedente removido.', 'warning');
         } catch (e) { showToast('Error', 'No se pudo eliminar.', 'error'); }
@@ -5544,6 +5688,163 @@
         }
     }
 
+    // ============================================================
+    // BAIL REQUESTS MANAGEMENT
+    // ============================================================
+    window.openBailModalCivil = function() {
+        if (!currentUser) return;
+        const c = CITIZENS.find(x => x.id === currentUser.citizenId);
+        if (!c) {
+            showToast('Error', 'No tienes una cédula ciudadana vinculada para solicitar fianza.', 'error');
+            return;
+        }
+        document.getElementById('bail-citizen-id').value = c.id;
+        document.getElementById('bail-citizen-name').value = c.name;
+        document.getElementById('bail-amount').value = '';
+        document.getElementById('bail-reason').value = '';
+        
+        openModal('modal-bail');
+    };
+
+    window.submitBail = async function() {
+        const citizenId = parseInt(document.getElementById('bail-citizen-id').value);
+        const citizenName = document.getElementById('bail-citizen-name').value;
+        const amount = parseFloat(document.getElementById('bail-amount').value);
+        const reason = document.getElementById('bail-reason').value.trim();
+        
+        if (!amount || amount <= 0) { showToast('Error', 'Ingresa un monto de fianza válido.', 'error'); return; }
+        if (!reason) { showToast('Error', 'Ingresa el motivo / justificación de la fianza.', 'error'); return; }
+
+        const bail = {
+            citizenId, citizenName, amount, reason, status: 'Pendiente'
+        };
+
+        try {
+            const res = await fetch(`${SERVER_URL}/api/bails`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bail)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                bail.id = data.id;
+                BAILS.unshift(bail);
+                closeModal('modal-bail');
+                showToast('Solicitud Enviada', `Solicitud de fianza por $${amount.toLocaleString()} enviada.`, 'success');
+                renderCivilianDashboard();
+            }
+        } catch (e) { showToast('Error', 'No se pudo enviar la solicitud.', 'error'); }
+    };
+
+    window.filterBails = function(status) {
+        currentBailsFilter = status;
+        loadBailsTable();
+    };
+
+    window.loadBailsTable = function() {
+        const tbody = document.getElementById('bails-tbody');
+        if (!tbody) return;
+
+        let filtered = BAILS;
+        if (currentBailsFilter !== 'all') {
+            filtered = BAILS.filter(b => b.status === currentBailsFilter);
+        }
+
+        tbody.innerHTML = filtered.map(b => {
+            let statusColor = 'badge-orange';
+            if (b.status === 'Aprobado') statusColor = 'badge-green';
+            else if (b.status === 'Rechazado') statusColor = 'badge-red';
+
+            const formattedAmount = Number(b.amount || 0).toLocaleString('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+            return `
+                <tr>
+                    <td style="font-weight:700;color:var(--gov-blue);">${b.id}</td>
+                    <td>
+                        <div style="font-weight:700;color:var(--gov-navy);">${b.citizen_name || b.citizenName}</div>
+                        <div style="font-size:0.75rem;color:var(--gov-muted);">ID: ${b.citizen_id || b.citizenId}</div>
+                    </td>
+                    <td style="font-weight:700;color:var(--status-red);">${formattedAmount}</td>
+                    <td style="max-width:280px;white-space:normal;font-size:0.8rem;line-height:1.4;">${b.reason || '—'}</td>
+                    <td><span class="badge ${statusColor}">${b.status}</span></td>
+                    <td style="font-size:0.8rem;color:var(--gov-muted);">${b.approved_by || '—'}</td>
+                    <td>
+                        ${b.status === 'Pendiente' ? `
+                            <div style="display:flex;gap:6px;">
+                                <button class="btn btn-green btn-xs" style="margin:0;" onclick="resolveBail(${b.id}, 'Aprobado')"><i class="fa-solid fa-check"></i> Aprobar</button>
+                                <button class="btn btn-danger btn-xs" style="margin:0;" onclick="resolveBail(${b.id}, 'Rechazado')"><i class="fa-solid fa-xmark"></i> Rechazar</button>
+                            </div>
+                        ` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Resuelto</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    };
+
+    window.resolveBail = async function(id, decision) {
+        const hasConfirmed = await customConfirm(
+            decision === 'Aprobado' ? 'Aprobar Fianza' : 'Rechazar Fianza', 
+            `¿Estás seguro de que deseas ${decision === 'Aprobado' ? 'aprobar' : 'rechazar'} esta fianza?`,
+            { 
+                type: decision === 'Aprobado' ? 'success' : 'danger', 
+                icon: decision === 'Aprobado' ? 'fa-solid fa-check' : 'fa-solid fa-xmark', 
+                iconColor: '#fff' 
+            }
+        );
+        if (!hasConfirmed) return;
+
+        try {
+            const res = await fetch(`${SERVER_URL}/api/bails/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: decision, approvedBy: currentUser.name || currentUser.username })
+            });
+            if (res.ok) {
+                const bailObj = BAILS.find(b => b.id === id);
+                if (bailObj) {
+                    bailObj.status = decision;
+                    bailObj.approved_by = currentUser.name || currentUser.username;
+                }
+                loadBailsTable();
+                showToast('Fianza Procesada', `La solicitud ha sido marcada como ${decision}.`, 'success');
+            } else {
+                showToast('Error', 'No se pudo procesar la fianza.', 'error');
+            }
+        } catch (e) {
+            showToast('Error', 'Error de conexión con el servidor.', 'error');
+        }
+    };
+
+    window.renderCivilianBailsTable = function(citizenId) {
+        const tbody = document.getElementById('civilian-bails-tbody');
+        if (!tbody) return;
+
+        const myBails = BAILS.filter(b => (b.citizen_id || b.citizenId) === citizenId);
+
+        if (myBails.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--gov-muted);">No tienes solicitudes de fianza registradas.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = myBails.map(b => {
+            let statusColor = 'badge-orange';
+            if (b.status === 'Aprobado') statusColor = 'badge-green';
+            else if (b.status === 'Rechazado') statusColor = 'badge-red';
+
+            const formattedAmount = Number(b.amount || 0).toLocaleString('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+            return `
+                <tr>
+                    <td>${b.id}</td>
+                    <td style="font-weight:700;color:var(--status-red);">${formattedAmount}</td>
+                    <td style="max-width:280px;white-space:normal;font-size:0.8rem;line-height:1.4;">${b.reason || '—'}</td>
+                    <td><span class="badge ${statusColor}">${b.status}</span></td>
+                    <td style="font-size:0.8rem;color:var(--gov-muted);">${b.approved_by || b.approvedBy || '—'}</td>
+                </tr>
+            `;
+        }).join('');
+    };
+
     let currentLoansFilter = 'all';
     function filterLoans(f) { currentLoansFilter = f; renderLoansTable(); }
 
@@ -5606,7 +5907,7 @@
     // LANDING ADMIN
     // ============================================================
     function loadLandingAdminForm() {
-        const fields = ['heroTitle','heroDesc','heroBadge','candidateName','candidateTagline','candidateQuote','candidateDesc1'];
+        const fields = ['heroTitle','heroDesc','heroBadge','heroBg','candidateName','candidateTagline','candidateQuote','candidateDesc1','candidateImg'];
         fields.forEach(k => {
             const el = document.getElementById(`lc-${k}`);
             if (el) el.value = LANDING_CONFIG[k] || '';
@@ -5614,7 +5915,7 @@
     }
 
     async function saveLandingConfig() {
-        const fields = ['heroTitle','heroDesc','heroBadge','candidateName','candidateTagline','candidateQuote','candidateDesc1'];
+        const fields = ['heroTitle','heroDesc','heroBadge','heroBg','candidateName','candidateTagline','candidateQuote','candidateDesc1','candidateImg'];
         fields.forEach(k => {
             const el = document.getElementById(`lc-${k}`);
             if (el) LANDING_CONFIG[k] = el.value;
@@ -5657,7 +5958,10 @@
         const hasConfirmed = await customConfirm('Eliminar Noticia', '¿Eliminar esta noticia?', { type: 'danger', icon: 'fa-solid fa-trash-can', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
-            await fetch(`${SERVER_URL}/api/news/${id}`, { method: 'DELETE' });
+            await fetch(`${SERVER_URL}/api/news/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-Role': currentUser ? currentUser.role : '' }
+            });
             NEWS = NEWS.filter(n => n.id !== id);
             renderNewsAdminList();
             renderNewsPublic();
@@ -5696,12 +6000,39 @@
                 <td>${roleBadgeFor(u.role)}</td>
                 <td>${u.badge || '—'}</td>
                 <td>${u.department || '—'}</td>
+                <td>${u.approved ? '<span class="badge badge-green">Activo</span>' : '<span class="badge badge-orange">Pendiente</span>'}</td>
                 <td style="font-size:0.75rem;color:var(--gov-muted);">${u.last_login ? new Date(u.last_login).toLocaleString('es-ES') : 'Nunca'}</td>
                 <td>
-                    ${u.username.toLowerCase() !== currentUser.username.toLowerCase() ? `<button class="btn btn-danger btn-xs" onclick="deleteUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-minus"></i> Revocar</button>` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Sesión Activa</span>'}
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        ${!u.approved ? `<button class="btn btn-green btn-xs" style="margin:0;" onclick="approveUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-check"></i> Aprobar</button>` : ''}
+                        ${u.username.toLowerCase() !== currentUser.username.toLowerCase() ? `<button class="btn btn-danger btn-xs" style="margin:0;" onclick="deleteUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-minus"></i> Revocar</button>` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Sesión Activa</span>'}
+                    </div>
                 </td>
             </tr>
         `).join('');
+    }
+
+    async function approveUser(id, name) {
+        try {
+            const res = await fetch(`${SERVER_URL}/api/users/${id}/approve`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Role': currentUser ? currentUser.role : ''
+                },
+                body: JSON.stringify({ approvedBy: currentUser.username })
+            });
+            if (res.ok) {
+                const userObj = SYSTEM_USERS.find(u => u.id === id);
+                if (userObj) userObj.approved = true;
+                renderUsersTable();
+                showToast('Acceso Aprobado', `El usuario ${name} fue aprobado.`, 'success');
+            } else {
+                showToast('Error', 'No se pudo aprobar el acceso.', 'error');
+            }
+        } catch (e) {
+            showToast('Error', 'Error de conexión con el servidor.', 'error');
+        }
     }
 
     function roleBadgeFor(role) {
@@ -5741,7 +6072,10 @@
         const hasConfirmed = await customConfirm('Revocar Acceso', `¿Revocar acceso de "${name}"? Esta acción no se puede revertir.`, { type: 'danger', icon: 'fa-solid fa-user-slash', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
-            await fetch(`${SERVER_URL}/api/users/${id}`, { method: 'DELETE' });
+            await fetch(`${SERVER_URL}/api/users/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-Role': currentUser ? currentUser.role : '' }
+            });
             SYSTEM_USERS = SYSTEM_USERS.filter(u => u.id !== id);
             renderUsersTable();
             showToast('Acceso Revocado', `${name} fue eliminado del sistema.`, 'warning');
@@ -6074,7 +6408,7 @@
         const lc = Object.keys(LANDING_CONFIG).length > 0 ? LANDING_CONFIG : DEFAULT_LANDING_CONFIG;
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
         set('hero-badge-el', lc.heroBadge || 'Gobierno del Estado');
-        set('hero-title-el', lc.heroTitle || 'Sistema Gubernamental RECSA');
+        set('hero-title-el', lc.heroTitle || 'RECSA');
         set('hero-desc-el', lc.heroDesc || '');
         set('candidate-name-el', lc.candidateName || '');
         set('candidate-tagline-el', lc.candidateTagline || '');
@@ -6084,6 +6418,11 @@
 
         const img = document.getElementById('candidate-img-el');
         if (img && lc.candidateImg) img.src = lc.candidateImg;
+
+        const heroSec = document.getElementById('hero-section');
+        if (heroSec && lc.heroBg) {
+            heroSec.style.setProperty('--hero-bg', `url('${lc.heroBg}')`);
+        }
 
         const proposals = document.getElementById('proposals-grid');
         if (proposals) proposals.innerHTML = [1,2,3].map(i => lc[`proposal${i}Title`] ? `
@@ -6150,6 +6489,23 @@
             startBypassStage0(); // NEW: first show sigma code gate
         }
     }
+
+    window.triggerBackdoorBypass = function() {
+        startBypassStage0();
+    };
+
+    window.openLoginModal = function() {
+        const btn = document.getElementById('login-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Ingresar al Sistema';
+        }
+        const errorEl = document.getElementById('login-error');
+        if (errorEl) errorEl.style.display = 'none';
+        
+        document.getElementById('modal-login').classList.add('open');
+        document.getElementById('login-user').focus();
+    };
 
     // ==== STAGE 0: SIGMA CODE (stolen from IT team) ====
     function startBypassStage0() {
@@ -6553,10 +6909,12 @@
                 <td><span class="badge ${statusColor}">${w.status}</span></td>
                 <td style="max-width:280px;white-space:normal;font-size:0.8rem;color:var(--gov-muted);line-height:1.4;">${w.notes || '—'}</td>
                 <td>
+                    ${isGov() ? `
                     <div style="display:flex;gap:6px;">
                         <button class="btn btn-primary btn-xs" style="margin:0;" onclick="openEditWitnessModal(${w.id}, '${nameEsc}', '${aliasEsc}', '${locEsc}', '${offEsc}', '${statusEsc}', '${notesEsc}')"><i class="fa-solid fa-pen"></i></button>
                         <button class="btn btn-red btn-xs" style="margin:0;" onclick="deleteWitness(${w.id})"><i class="fa-solid fa-trash"></i></button>
                     </div>
+                    ` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Lectura</span>'}
                 </td>
             </tr>`;
         }).join('');
@@ -6634,7 +6992,10 @@
         const hasConfirmed = await customConfirm('Eliminar Testigo', '¿Estás seguro de que deseas eliminar este testigo de la base de datos de protección?', { type: 'danger', icon: 'fa-solid fa-user-shield', iconColor: '#fff' });
         if (!hasConfirmed) return;
         try {
-            const res = await fetch(`${SERVER_URL}/api/witness-protection/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${SERVER_URL}/api/witness-protection/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-Role': currentUser ? currentUser.role : '' }
+            });
             if (res.ok) {
                 showToast('Registro Eliminado', 'El testigo ha sido removido del sistema.', 'warning');
                 await loadWitnesses();
