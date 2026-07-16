@@ -291,9 +291,9 @@ async function initDb() {
       [JSON.stringify(defaultWitnessComp)]
     );
 
-    // Seed witness protection if empty and not seeded before
-    const witnessSeededCheck = await client.query("SELECT COUNT(*) FROM recsa_config WHERE key = 'witness_seeded'");
-    if (parseInt(witnessSeededCheck.rows[0].count) === 0) {
+    // Seed witness protection if table is empty
+    const witnessCountCheck = await client.query("SELECT COUNT(*) FROM recsa_witness_protection");
+    if (parseInt(witnessCountCheck.rows[0].count) === 0) {
       console.log('Sembrando testigos protegidos iniciales...');
       await client.query(`
         INSERT INTO recsa_witness_protection (witness_name, alias, safehouse_location, assigned_officers, status, notes)
@@ -302,7 +302,10 @@ async function initDb() {
         ('Karen Drake', 'T-100', 'Apartamento 3B - El Burro Heights', 'Oficial Jones (LSPD)', 'Seguridad Media', 'Proporcionó información sobre el cartel de Madrazo.'),
         ('Brad Snider', 'BradS', 'Cementerio de Ludendorff (Fingido)', 'Agente Steve Haines (FIB)', 'Reubicado', 'Simulación de muerte para cobertura de testigo.')
       `);
-      await client.query("INSERT INTO recsa_config (key, value) VALUES ('witness_seeded', 'true')");
+      await client.query(
+        "INSERT INTO recsa_config (key, value) VALUES ('witness_seeded', $1) ON CONFLICT (key) DO NOTHING",
+        [JSON.stringify(true)]
+      );
     }
 
     // NOTE: No citizen seeds — citizens are managed exclusively via the admin panel ("Data de Ciudadanos").
