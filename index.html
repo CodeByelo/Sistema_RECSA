@@ -794,6 +794,43 @@
     </style>
 </head>
 <body>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        var div = document.createElement('div');
+        div.style.position = 'fixed';
+        div.style.inset = '0';
+        div.style.background = 'red';
+        div.style.color = 'white';
+        div.style.zIndex = '999999';
+        div.style.padding = '20px';
+        div.style.fontFamily = 'monospace';
+        div.style.overflow = 'auto';
+        div.innerHTML = '<h1>Error de Script Detectado:</h1>' +
+            '<p><strong>Mensaje:</strong> ' + message + '</p>' +
+            '<p><strong>Archivo:</strong> ' + source + '</p>' +
+            '<p><strong>Línea:</strong> ' + lineno + ' : ' + colno + '</p>' +
+            '<p><strong>Stack:</strong> ' + (error ? error.stack : 'N/A') + '</p>';
+        document.body.appendChild(div);
+        return false;
+    };
+    window.onunhandledrejection = function(event) {
+        var message = event.reason ? (event.reason.message || event.reason) : 'Promesa rechazada';
+        var stack = event.reason && event.reason.stack ? event.reason.stack : 'N/A';
+        var div = document.createElement('div');
+        div.style.position = 'fixed';
+        div.style.inset = '0';
+        div.style.background = 'darkred';
+        div.style.color = 'white';
+        div.style.zIndex = '999999';
+        div.style.padding = '20px';
+        div.style.fontFamily = 'monospace';
+        div.style.overflow = 'auto';
+        div.innerHTML = '<h1>Rechazo de Promesa Detectado:</h1>' +
+            '<p><strong>Mensaje:</strong> ' + message + '</p>' +
+            '<p><strong>Stack:</strong> ' + stack + '</p>';
+        document.body.appendChild(div);
+    };
+</script>
 <div id="toast-container"></div>
 
 <!-- ============================================================
