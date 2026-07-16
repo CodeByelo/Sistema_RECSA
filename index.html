@@ -6799,19 +6799,42 @@
             }
             document.getElementById('bypass-cmd-input').value = '';
         }
+    }    let bypassActiveNodes = [];
+    let bypassClickedNodes = [];
+    let bypassShuffleInterval = null;
+
+    function startBypassStage2(showFailMsg = false) {
+        bypassStage = 2;
+        bypassClickedNodes = [];
+        bypassActiveNodes = [];
+        
+        if (bypassShuffleInterval) {
+            clearInterval(bypassShuffleInterval);
+            bypassShuffleInterval = null;
+        }
+
+        document.getElementById('bypass-stage-2').style.display = 'flex';
+        const errEl = document.getElementById('bypass-cipher-error');
+        if (errEl) {
+            if (showFailMsg) {
+                errEl.style.color = '#ff3333';
+                errEl.textContent = '[FAIL] Secuencia interrumpida. Reiniciando derivación...';
+            } else {
+                errEl.style.color = '#33ff33';
+                errEl.textContent = '';
+            }
+        }
+        
+        renderBypassGrid();
+        
+        bypassShuffleInterval = setInterval(() => {
+            shuffleBypassActiveNodes();
+        }, 1200);
+        
+        startMatrixEffect('bypass-matrix-bg-2');
     }
 
-    let bypassActiveNodes = [];
-    let bypassClickedNodes = [];
-
-    function startBypassStage2() {
-        bypassStage = 2;
-        bypassActiveNodes = [3, 5, 8]; // The 3 active nodes to click
-        bypassClickedNodes = [];
-        
-        document.getElementById('bypass-stage-2').style.display = 'flex';
-        document.getElementById('bypass-cipher-error').textContent = '';
-        
+    function renderBypassGrid() {
         const grid = document.getElementById('bypass-nodes-grid');
         if (!grid) return;
         grid.innerHTML = '';
@@ -6819,6 +6842,7 @@
         for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('button');
             btn.type = 'button';
+            btn.id = `bypass-node-btn-${i}`;
             btn.textContent = `NODO-0${i}`;
             btn.style.fontFamily = 'monospace';
             btn.style.fontSize = '0.8rem';
@@ -6826,41 +6850,71 @@
             btn.style.padding = '14px 10px';
             btn.style.borderRadius = '6px';
             btn.style.cursor = 'pointer';
-            btn.style.transition = 'all 0.2s';
-            
-            const isGreen = bypassActiveNodes.includes(i);
-            if (isGreen) {
+            btn.style.transition = 'all 0.15s ease-out';
+            grid.appendChild(btn);
+        }
+        shuffleBypassActiveNodes();
+    }
+
+    function shuffleBypassActiveNodes() {
+        if (bypassClickedNodes.length >= 3) return;
+
+        const availableNodeIds = [];
+        for (let i = 1; i <= 9; i++) {
+            if (!bypassClickedNodes.includes(i)) {
+                availableNodeIds.push(i);
+            }
+        }
+
+        const neededActiveCount = 3 - bypassClickedNodes.length;
+        const newActive = [];
+        const tempAvailable = [...availableNodeIds];
+        while (newActive.length < neededActiveCount && tempAvailable.length > 0) {
+            const randIdx = Math.floor(Math.random() * tempAvailable.length);
+            newActive.push(tempAvailable.splice(randIdx, 1)[0]);
+        }
+        
+        bypassActiveNodes = [...newActive];
+
+        for (let i = 1; i <= 9; i++) {
+            const btn = document.getElementById(`bypass-node-btn-${i}`);
+            if (!btn) continue;
+
+            if (bypassClickedNodes.includes(i)) {
+                btn.style.background = '#33ff33';
+                btn.style.border = '1px solid #33ff33';
+                btn.style.color = '#000';
+                btn.style.boxShadow = '0 0 20px #33ff33';
+                btn.style.cursor = 'default';
+                btn.onclick = null;
+            } else if (bypassActiveNodes.includes(i)) {
                 btn.style.background = '#0d360d';
                 btn.style.border = '1px solid #33ff33';
                 btn.style.color = '#33ff33';
-                btn.style.boxShadow = '0 0 10px rgba(51,255,51,0.2)';
+                btn.style.boxShadow = '0 0 10px rgba(51,255,51,0.3)';
+                btn.style.cursor = 'pointer';
                 btn.onclick = () => handleNodeClick(i, btn);
             } else {
                 btn.style.background = '#111';
                 btn.style.border = '1px solid #222';
                 btn.style.color = '#444';
+                btn.style.boxShadow = 'none';
+                btn.style.cursor = 'pointer';
                 btn.onclick = () => {
-                    const errEl = document.getElementById('bypass-cipher-error');
-                    if (errEl) {
-                        errEl.style.color = '#ff3333';
-                        errEl.textContent = `[FAIL] Nodo ${i} inactivo. Evasión fallida. Intenta de nuevo.`;
+                    if (bypassShuffleInterval) {
+                        clearInterval(bypassShuffleInterval);
+                        bypassShuffleInterval = null;
                     }
-                    // Reset
-                    startBypassStage2();
+                    startBypassStage2(true);
                 };
             }
-            grid.appendChild(btn);
         }
-        startMatrixEffect('bypass-matrix-bg-2');
     }
 
     function handleNodeClick(nodeNum, btnEl) {
         if (bypassClickedNodes.includes(nodeNum)) return;
         
         bypassClickedNodes.push(nodeNum);
-        btnEl.style.background = '#33ff33';
-        btnEl.style.color = '#000';
-        btnEl.style.boxShadow = '0 0 20px #33ff33';
         
         const errEl = document.getElementById('bypass-cipher-error');
         if (errEl) {
@@ -6868,8 +6922,14 @@
             errEl.textContent = `[OK] Nodo ${nodeNum} anulado (${bypassClickedNodes.length}/3)`;
         }
 
+        shuffleBypassActiveNodes();
+
         if (bypassClickedNodes.length === 3) {
             if (errEl) errEl.textContent = '[OK] Conexiones anuladas. Abriendo puerto seguro...';
+            if (bypassShuffleInterval) {
+                clearInterval(bypassShuffleInterval);
+                bypassShuffleInterval = null;
+            }
             setTimeout(() => {
                 document.getElementById('bypass-stage-2').style.display = 'none';
                 stopMatrixEffect();
@@ -6992,6 +7052,10 @@
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
+        if (bypassShuffleInterval) {
+            clearInterval(bypassShuffleInterval);
+            bypassShuffleInterval = null;
+        }
         stopMatrixEffect();
         bypassStage = 0;
         glitchClickCount = 0;
