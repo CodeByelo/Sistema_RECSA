@@ -2097,8 +2097,14 @@
                                     <input type="text" id="lc-heroBadge" class="form-control">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Imagen de Fondo (URL)</label>
-                                    <input type="text" id="lc-heroBg" class="form-control" placeholder="ej. ./assets/hero_bg.png">
+                                    <label class="form-label">Imagen de Fondo (URL o Archivo)</label>
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <input type="text" id="lc-heroBg" class="form-control" placeholder="ej. ./assets/hero_bg.png o pega una URL">
+                                        <label for="lc-heroBg-file" class="btn btn-ghost btn-sm" style="margin:0;cursor:pointer;white-space:nowrap;" title="Cargar imagen desde tu PC">
+                                            <i class="fa-solid fa-upload"></i> Cargar
+                                        </label>
+                                        <input type="file" id="lc-heroBg-file" accept="image/*" style="display:none;" onchange="handleHeroImageUpload(event, 'lc-heroBg')">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2122,8 +2128,17 @@
                                     <textarea id="lc-candidateDesc1" class="form-control" rows="3"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Foto del Gobernador (URL)</label>
-                                    <input type="text" id="lc-candidateImg" class="form-control" placeholder="ej. ./assets/candidate.png">
+                                    <label class="form-label">Foto del Gobernador (URL o Archivo)</label>
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <input type="text" id="lc-candidateImg" class="form-control" placeholder="ej. ./assets/candidate.png o pega una URL">
+                                        <label for="lc-candidateImg-file" class="btn btn-ghost btn-sm" style="margin:0;cursor:pointer;white-space:nowrap;" title="Cargar imagen desde tu PC">
+                                            <i class="fa-solid fa-upload"></i> Cargar
+                                        </label>
+                                        <input type="file" id="lc-candidateImg-file" accept="image/*" style="display:none;" onchange="handleHeroImageUpload(event, 'lc-candidateImg')">
+                                    </div>
+                                    <div id="lc-candidateImg-preview" style="margin-top:8px;display:none;">
+                                        <img id="lc-candidateImg-preview-img" src="" style="max-width:80px;max-height:80px;border-radius:50%;border:2px solid var(--gov-border);" alt="Vista previa">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -5064,7 +5079,7 @@
         document.getElementById('modal-citizen-title').textContent = 'Registrar Ciudadano';
         ['c-id','c-id-num','c-name','c-birthdate','c-phone','c-job','c-nationality','c-address','c-bank','c-fines','c-nu','c-avatar'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.value = id === 'c-fines' ? '0' : '';
+            if (el) el.value = id === 'c-fines' ? '0' : id === 'c-nationality' ? 'Americano' : '';
         });
         ['c-gender','c-veraz','c-police-status','c-driver-lic','c-weapon-lic','c-commercial-lic'].forEach(id => {
             const el = document.getElementById(id);
@@ -5138,6 +5153,7 @@
             }
         }
 
+        const isNewCitizen = !editId;
         try {
             const res = await fetch(`${SERVER_URL}/api/citizens`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(citizen)
@@ -5147,7 +5163,19 @@
                 if (idx >= 0) CITIZENS[idx] = citizen; else CITIZENS.push(citizen);
                 renderCitizenTable();
                 closeModal('modal-citizen');
-                showToast('Guardado', `${name} registrado en el padrón.`, 'success');
+                if (isNewCitizen) {
+                    // Generar usuario esperado para mostrarlo en el toast
+                    const parts = name.trim().split(/\s+/);
+                    let genUser = '';
+                    if (parts.length >= 2) {
+                        genUser = (parts[0][0] + parts[parts.length - 1]).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+                    } else {
+                        genUser = parts[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+                    }
+                    showToast('Ciudadano Registrado', `${name} ingresado al padrón.\n\n🔑 Usuario: <strong>${genUser || name}</strong>\n🔒 Contraseña: <strong>${citizen.id}</strong>`, 'success');
+                } else {
+                    showToast('Guardado', `${name} actualizado en el padrón.`, 'success');
+                }
                 document.getElementById('stat-citizens').textContent = CITIZENS.length;
             }
         } catch (e) { showToast('Error', 'No se pudo guardar.', 'error'); }
@@ -5966,6 +5994,26 @@
         });
     }
 
+    // Convertir archivo de imagen a Base64 y colocar en el input de URL
+    window.handleHeroImageUpload = function(event, targetInputId) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            const input = document.getElementById(targetInputId);
+            if (input) input.value = dataUrl;
+            // Preview para la foto del gobernador
+            if (targetInputId === 'lc-candidateImg') {
+                const preview = document.getElementById('lc-candidateImg-preview');
+                const img = document.getElementById('lc-candidateImg-preview-img');
+                if (preview && img) { img.src = dataUrl; preview.style.display = 'block'; }
+            }
+            showToast('Imagen cargada', `"${file.name}" lista. Haz clic en "Guardar Cambios" para aplicarla.`, 'success');
+        };
+        reader.readAsDataURL(file);
+    };
+
     async function saveLandingConfig() {
         const fields = ['heroTitle','heroDesc','heroBadge','heroBg','candidateName','candidateTagline','candidateQuote','candidateDesc1','candidateImg'];
         fields.forEach(k => {
@@ -6033,7 +6081,7 @@
                         <div style="font-weight:700;margin-top:4px;">${n.headline}</div>
                         <div style="font-size:0.75rem;color:var(--gov-muted);">${n.date}</div>
                     </div>
-                    <button class="btn btn-danger btn-xs" onclick="deleteNews(${n.id})"><i class="fa-solid fa-trash"></i></button>
+                    ${isGov() ? `<button class="btn btn-danger btn-xs" onclick="deleteNews(${n.id})"><i class="fa-solid fa-trash"></i></button>` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Solo Gobernador</span>'}
                 </div>
             `).join('')}</div>`;
     }
