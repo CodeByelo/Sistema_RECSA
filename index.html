@@ -1233,6 +1233,58 @@
     </div>
 </div>
 
+<!-- Modal: EDITAR USUARIO -->
+<div id="modal-edit-user" class="modal-overlay">
+    <div class="modal-box" style="max-width: 520px;">
+        <div class="modal-header">
+            <h3>Editar Acceso y Permisos</h3>
+            <button class="btn-modal-close" onclick="closeModal('modal-edit-user')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="eu-id">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nombre Completo</label>
+                    <input type="text" id="eu-name" class="form-control" readonly style="background:var(--gov-off); cursor:not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" id="eu-username" class="form-control" readonly style="background:var(--gov-off); cursor:not-allowed;">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Rol del Sistema *</label>
+                    <select id="eu-role" class="form-control">
+                        <option value="LSPD">LSPD — Policía de Los Santos</option>
+                        <option value="LSSD">LSSD — Sheriff del Condado</option>
+                        <option value="Juez">Juez / Magistrado</option>
+                        <option value="Inspector Fiscal">Inspector Fiscal RECSA</option>
+                        <option value="Banco RECSA">Banco RECSA — Créditos</option>
+                        <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
+                        <option value="Gobernador">Gobernador (Acceso Total)</option>
+                        <option value="Civil">Civil — Perfil propio</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Placa / Número de Placa</label>
+                    <input type="text" id="eu-badge" class="form-control" placeholder="ej. LSPD-045">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Departamento / Unidad</label>
+                    <input type="text" id="eu-dept" class="form-control" placeholder="ej. Homicidios LSPD">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-edit-user')">Cancelar</button>
+            <button class="btn btn-primary" onclick="updateUser()"><i class="fa-solid fa-floppy-disk"></i> Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: SOLICITAR PRÉSTAMO -->
 <div id="modal-loan" class="modal-overlay">
     <div class="modal-box" style="max-width: 500px;">
@@ -6005,6 +6057,7 @@
                 <td>
                     <div style="display:flex;gap:6px;align-items:center;">
                         ${!u.approved ? `<button class="btn btn-green btn-xs" style="margin:0;" onclick="approveUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-check"></i> Aprobar</button>` : ''}
+                        <button class="btn btn-primary btn-xs" style="margin:0;" onclick="openEditUserModal(${u.id})"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
                         ${u.username.toLowerCase() !== currentUser.username.toLowerCase() ? `<button class="btn btn-danger btn-xs" style="margin:0;" onclick="deleteUser(${u.id},'${u.name}')"><i class="fa-solid fa-user-minus"></i> Revocar</button>` : '<span style="font-size:0.75rem;color:var(--gov-muted);">Sesión Activa</span>'}
                     </div>
                 </td>
@@ -6067,6 +6120,56 @@
             showToast('Cuenta Creada', `${name} (${username}) tiene acceso al sistema.`, 'success');
         } catch (e) { showToast('Error', 'Error de conexión.', 'error'); }
     }
+
+    window.openEditUserModal = function(id) {
+        const u = SYSTEM_USERS.find(x => x.id === id);
+        if (!u) return;
+        document.getElementById('eu-id').value = u.id;
+        document.getElementById('eu-name').value = u.name;
+        document.getElementById('eu-username').value = u.username;
+        document.getElementById('eu-role').value = u.role || 'Civil';
+        document.getElementById('eu-badge').value = u.badge || '';
+        document.getElementById('eu-dept').value = u.department || '';
+        
+        openModal('modal-edit-user');
+    };
+
+    window.updateUser = async function() {
+        const id = parseInt(document.getElementById('eu-id').value);
+        const role = document.getElementById('eu-role').value;
+        const badge = document.getElementById('eu-badge').value.trim();
+        const department = document.getElementById('eu-dept').value.trim();
+        
+        if (!role) { showToast('Error', 'El rol es obligatorio.', 'error'); return; }
+        
+        try {
+            const res = await fetch(`${SERVER_URL}/api/users/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Role': currentUser ? currentUser.role : '',
+                    'X-User-Username': currentUser ? currentUser.username : ''
+                },
+                body: JSON.stringify({ role, badge, department })
+            });
+            if (res.ok) {
+                const uObj = SYSTEM_USERS.find(u => u.id === id);
+                if (uObj) {
+                    uObj.role = role;
+                    uObj.badge = badge;
+                    uObj.department = department;
+                }
+                renderUsersTable();
+                closeModal('modal-edit-user');
+                showToast('Cambios Guardados', 'Los permisos del usuario fueron actualizados.', 'success');
+            } else {
+                const data = await res.json();
+                showToast('Error', data.error || 'No se pudo actualizar.', 'error');
+            }
+        } catch (e) {
+            showToast('Error', 'Error de conexión con el servidor.', 'error');
+        }
+    };
 
     async function deleteUser(id, name) {
         const hasConfirmed = await customConfirm('Revocar Acceso', `¿Revocar acceso de "${name}"? Esta acción no se puede revertir.`, { type: 'danger', icon: 'fa-solid fa-user-slash', iconColor: '#fff' });

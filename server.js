@@ -243,6 +243,11 @@ async function initDb() {
       ALTER TABLE recsa_users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT FALSE;
     `);
 
+    // Auto-approve all Governor accounts so the user is not locked out
+    await client.query(`
+      UPDATE recsa_users SET approved = TRUE WHERE LOWER(role) = 'gobernador' OR username = 'GobernadorH';
+    `);
+
     console.log('Tablas creadas/verificadas correctamente.');
 
     // Seed GobernadorH if users table is empty
@@ -750,6 +755,22 @@ app.put('/api/users/:id/approve', async (req, res) => {
   try {
     await pool.query('UPDATE recsa_users SET approved = true WHERE id = $1', [id]);
     await logActivity(approvedBy || 'Gobernador', 'USER_APPROVED', `Aprobado acceso a usuario ID ${id}`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/users/:id', requireGobernador, async (req, res) => {
+  const { id } = req.params;
+  const { role, badge, department } = req.body;
+  try {
+    await pool.query(
+      'UPDATE recsa_users SET role = $1, badge = $2, department = $3 WHERE id = $4',
+      [role, badge || null, department || null, id]
+    );
+    const actor = req.headers['x-user-username'] || 'Gobernador';
+    await logActivity(actor, 'USER_ROLE_UPDATED', `Actualizado rol del usuario ID ${id} a ${role}`);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
