@@ -1243,16 +1243,16 @@
                 <div class="form-group">
                     <label class="form-label">Rol del Sistema *</label>
                     <select id="nu-role" class="form-control">
+                        <option value="Gobernador">Gobernador (Acceso Total)</option>
+                        <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
+                        <option value="Juez">Juez / Magistrado</option>
                         <option value="LSPD">LSPD — Policía de Los Santos</option>
                         <option value="LSSD">LSSD — Sheriff del Condado</option>
-                        <option value="Juez">Juez / Magistrado</option>
+                        <option value="Agente Especial">Agente Especial</option>
                         <option value="Inspector Fiscal">Inspector Fiscal RECSA</option>
                         <option value="Banco RECSA">Banco RECSA — Créditos</option>
                         <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
                         <option value="Miembro Gubernamental">Miembro Gubernamental</option>
-                        <option value="Agente Especial">Agente Especial</option>
-                        <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
-                        <option value="Gobernador">Gobernador (Acceso Total)</option>
                         <option value="Civil">Civil — Perfil propio</option>
                     </select>
                 </div>
@@ -1298,16 +1298,16 @@
                 <div class="form-group">
                     <label class="form-label">Rol del Sistema *</label>
                     <select id="eu-role" class="form-control">
+                        <option value="Gobernador">Gobernador (Acceso Total)</option>
+                        <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
+                        <option value="Juez">Juez / Magistrado</option>
                         <option value="LSPD">LSPD — Policía de Los Santos</option>
                         <option value="LSSD">LSSD — Sheriff del Condado</option>
-                        <option value="Juez">Juez / Magistrado</option>
+                        <option value="Agente Especial">Agente Especial</option>
                         <option value="Inspector Fiscal">Inspector Fiscal RECSA</option>
                         <option value="Banco RECSA">Banco RECSA — Créditos</option>
                         <option value="equipo_informatico">Equipo Informático (IT Facción)</option>
                         <option value="Miembro Gubernamental">Miembro Gubernamental</option>
-                        <option value="Agente Especial">Agente Especial</option>
-                        <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
-                        <option value="Gobernador">Gobernador (Acceso Total)</option>
                         <option value="Civil">Civil — Perfil propio</option>
                     </select>
                 </div>
@@ -1826,14 +1826,14 @@
                                     <div class="form-group">
                                         <label class="form-label">Rango / Empleo Solicitado</label>
                                         <select id="req-role-select" class="form-control" onchange="handleReqRoleSelect(this.value)">
+                                            <option value="Gobernador">Gobernador / Staff</option>
+                                            <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
+                                            <option value="Juez">Juez del Estado</option>
                                             <option value="LSPD">Oficial de Policía (LSPD)</option>
                                             <option value="LSSD">Oficial de Sheriff (LSSD)</option>
-                                            <option value="SAMD">Médico / Paramédico (SAMD)</option>
-                                            <option value="Juez">Juez del Estado</option>
-                                            <option value="Miembro Gubernamental">Miembro Gubernamental</option>
                                             <option value="Agente Especial">Agente Especial</option>
-                                            <option value="Director del Servicio Secreto">Director del Servicio Secreto</option>
-                                            <option value="Gobernador">Gobernador / Staff</option>
+                                            <option value="Miembro Gubernamental">Miembro Gubernamental</option>
+                                            <option value="SAMD">Médico / Paramédico (SAMD)</option>
                                         </select>
                                     </div>
                                     <div class="form-row" style="display:flex; gap:12px;">
@@ -2699,6 +2699,20 @@
     const SERVER_URL = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.origin === 'null' || window.location.origin.includes('file://'))
         ? 'http://localhost:3000'
         : window.location.origin;
+    const ROLE_COLORS = {
+        'gobernador': { text: '#ffaa00', bg: 'rgba(255,170,0,0.12)', border: 'rgba(255,170,0,0.3)' },
+        'lspd': { text: '#293fac', bg: 'rgba(41,63,172,0.12)', border: 'rgba(41,63,172,0.3)' },
+        'lssd': { text: '#83641d', bg: 'rgba(131,100,29,0.12)', border: 'rgba(131,100,29,0.3)' },
+        'juez': { text: '#F1C40F', bg: 'rgba(241,196,15,0.12)', border: 'rgba(241,196,15,0.3)' },
+        'banco recsa': { text: '#3C9410', bg: 'rgba(60,148,16,0.12)', border: 'rgba(60,148,16,0.3)' },
+        'director del servicio secreto': { text: '#941B1D', bg: 'rgba(148,27,29,0.12)', border: 'rgba(148,27,29,0.3)' },
+        'civil': { text: '#A8A8A8', bg: 'rgba(168,168,168,0.12)', border: 'rgba(168,168,168,0.3)' },
+        'agente especial': { text: '#8e44ad', bg: 'rgba(142,68,173,0.12)', border: 'rgba(142,68,173,0.3)' },
+        'inspector fiscal': { text: '#16a085', bg: 'rgba(22,160,133,0.12)', border: 'rgba(22,160,133,0.3)' },
+        'miembro gubernamental': { text: '#e67e22', bg: 'rgba(230,126,34,0.12)', border: 'rgba(230,126,34,0.3)' },
+        'equipo_informatico': { text: '#2c3e50', bg: 'rgba(44,62,80,0.12)', border: 'rgba(44,62,80,0.3)' },
+        'samd': { text: '#27ae60', bg: 'rgba(39,174,96,0.12)', border: 'rgba(39,174,96,0.3)' }
+    };
     let LOANS_CONFIG = { interestRate: 0.1, interestPeriod: 'diario' };
 
     let serverConnected = false;
@@ -4861,7 +4875,17 @@
         document.getElementById('user-name-display').textContent = name;
         document.getElementById('user-dept-display').textContent = currentUser.department || currentUser.role;
         document.getElementById('user-avatar-letter').textContent = name.charAt(0).toUpperCase();
-        document.getElementById('user-role-badge').textContent = currentUser.role;
+        const badgeEl = document.getElementById('user-role-badge');
+        if (badgeEl) {
+            badgeEl.textContent = currentUser.role;
+            const r = (currentUser.role || '').toLowerCase();
+            const cfg = ROLE_COLORS[r] || { text: '#fff', bg: 'rgba(255,255,255,0.15)', border: 'rgba(255,255,255,0.25)' };
+            badgeEl.style.background = cfg.bg;
+            badgeEl.style.color = cfg.text;
+            badgeEl.style.borderColor = cfg.border;
+            badgeEl.style.borderStyle = 'solid';
+            badgeEl.style.borderWidth = '1.5px';
+        }
 
         const show = (id, visible) => {
             const el = document.getElementById(id);
@@ -6256,21 +6280,24 @@
         }
     }
 
+
     function roleBadgeFor(role) {
         const r = (role||'').toLowerCase();
-        if (r === 'gobernador') return '<span class="badge badge-gold"><i class="fa-solid fa-landmark"></i> Gobernador</span>';
-        if (r === 'lspd') return '<span class="badge badge-blue"><i class="fa-solid fa-shield-halved"></i> LSPD</span>';
-        if (r === 'lssd') return '<span class="badge badge-blue"><i class="fa-solid fa-shield-halved"></i> LSSD</span>';
-        if (r === 'juez') return '<span class="badge badge-purple"><i class="fa-solid fa-gavel"></i> Juez</span>';
-        if (r.includes('inspector')) return '<span class="badge badge-green"><i class="fa-solid fa-magnifying-glass-dollar"></i> Inspector</span>';
-        if (r.includes('banco')) return '<span class="badge badge-green"><i class="fa-solid fa-building-columns"></i> Banco</span>';
-        if (r.includes('miembro gubernamental')) return '<span class="badge badge-gold"><i class="fa-solid fa-building-flag"></i> Miembro Gub.</span>';
-        if (r.includes('agente especial')) return '<span class="badge badge-purple"><i class="fa-solid fa-user-secret"></i> Agente Especial</span>';
-        if (r.includes('director del servicio secreto')) return '<span class="badge badge-gold"><i class="fa-solid fa-user-shield"></i> Dir. Serv. Secreto</span>';
-        if (r === 'equipo_informatico' || r.includes('inform')) return '<span class="badge badge-gray"><i class="fa-solid fa-terminal"></i> IT</span>';
-        if (r === 'samd') return '<span class="badge badge-green"><i class="fa-solid fa-kit-medical"></i> SAMD</span>';
-        if (r === 'civil') return '<span class="badge badge-gray"><i class="fa-solid fa-user"></i> Civil</span>';
-        return `<span class="badge badge-gray">${role}</span>`;
+        const cfg = ROLE_COLORS[r] || { text: '#7f8c8d', bg: 'rgba(127,140,141,0.12)', border: 'rgba(127,140,141,0.3)' };
+        
+        let icon = 'fa-user';
+        if (r === 'gobernador') icon = 'fa-landmark';
+        else if (r === 'lspd' || r === 'lssd') icon = 'fa-shield-halved';
+        else if (r === 'juez') icon = 'fa-gavel';
+        else if (r.includes('inspector')) icon = 'fa-magnifying-glass-dollar';
+        else if (r.includes('banco')) icon = 'fa-building-columns';
+        else if (r.includes('miembro gubernamental')) icon = 'fa-building-flag';
+        else if (r.includes('agente especial')) icon = 'fa-user-secret';
+        else if (r.includes('director del servicio secreto')) icon = 'fa-user-shield';
+        else if (r === 'equipo_informatico' || r.includes('inform')) icon = 'fa-terminal';
+        else if (r === 'samd') icon = 'fa-kit-medical';
+        
+        return `<span class="badge" style="background:${cfg.bg}; color:${cfg.text}; border:1.5px solid ${cfg.border}; font-weight:800; font-size:0.75rem;"><i class="fa-solid ${icon}"></i> ${role}</span>`;
     }
 
     async function createUser() {
