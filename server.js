@@ -787,6 +787,40 @@ app.put('/api/users/:id/password', async (req, res) => {
   }
 });
 
+app.put('/api/users/:id/credentials', async (req, res) => {
+  const { id } = req.params;
+  const { username, password, currentPassword } = req.body;
+  try {
+    const userCheck = await pool.query('SELECT username, password FROM recsa_users WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+    
+    const dbUser = userCheck.rows[0];
+    if (dbUser.password !== currentPassword) {
+      return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+    }
+    
+    const trimUsername = username ? username.trim() : '';
+    if (trimUsername && trimUsername !== dbUser.username) {
+      const dupCheck = await pool.query('SELECT id FROM recsa_users WHERE username = $1 AND id != $2', [trimUsername, id]);
+      if (dupCheck.rows.length > 0) {
+        return res.status(409).json({ error: 'El nombre de usuario ya está registrado por otra cuenta.' });
+      }
+    }
+    
+    const finalUsername = trimUsername || dbUser.username;
+    const finalPassword = password || dbUser.password;
+    
+    await pool.query('UPDATE recsa_users SET username = $1, password = $2 WHERE id = $3', [finalUsername, finalPassword, id]);
+    await logActivity(dbUser.username, 'CREDENTIALS_UPDATE', `El usuario actualizó sus credenciales. Nuevo usuario: ${finalUsername}`);
+    
+    res.json({ success: true, username: finalUsername });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.put('/api/users/:id/link-citizen', async (req, res) => {
   const { id } = req.params;
   const { citizenId, username } = req.body;

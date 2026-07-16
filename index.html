@@ -1330,6 +1330,50 @@
     </div>
 </div>
 
+<!-- Modal: CONFIGURACIÓN DE CREDENCIALES -->
+<div id="modal-edit-credentials" class="modal-overlay">
+    <div class="modal-box" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-user-gear"></i> Configuración de Cuenta</h3>
+            <button class="btn-modal-close" onclick="closeModal('modal-edit-credentials')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-info" style="background: var(--primary-ultra); color: var(--primary-dk); border: 1.5px solid var(--primary-mid); border-radius: 8px; margin-bottom: 16px; font-size: 0.8rem; padding: 12px;">
+                <i class="fa-solid fa-circle-info"></i> Puedes cambiar tu nombre de usuario de acceso y/o tu contraseña actual.
+            </div>
+            <div id="credentials-error" class="alert alert-danger" style="display:none; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; border-radius: 8px; font-size: 0.8rem; padding: 12px; margin-bottom: 16px;">
+                <i class="fa-solid fa-circle-exclamation"></i> <span id="credentials-error-text"></span>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Nombre de Usuario de Acceso</label>
+                <input type="text" id="ec-username" class="form-control" placeholder="Ej: CarlosLSPD">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Nueva Contraseña (Dejar vacío para no cambiar)</label>
+                <input type="password" id="ec-new-password" class="form-control" placeholder="Nueva contraseña de acceso">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Confirmar Nueva Contraseña</label>
+                <input type="password" id="ec-confirm-password" class="form-control" placeholder="Confirmar nueva contraseña">
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0 16px 0;">
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="color: var(--primary); font-weight: 700;">Contraseña Actual (Requerido para guardar cambios) *</label>
+                <input type="password" id="ec-current-password" class="form-control" placeholder="Escribe tu contraseña actual para autorizar" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modal-edit-credentials')">Cancelar</button>
+            <button class="btn btn-green" id="btn-save-credentials" onclick="saveCredentials()"><i class="fa-solid fa-floppy-disk"></i> Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: SOLICITAR PRÉSTAMO -->
 <div id="modal-loan" class="modal-overlay">
     <div class="modal-box" style="max-width: 500px;">
@@ -1567,6 +1611,9 @@
                         <strong id="user-name-display">---</strong>
                         <span id="user-dept-display">---</span>
                     </div>
+                    <button class="btn btn-ghost btn-sm" onclick="openCredentialsModal()" title="Configuración de Cuenta" style="color: #fff; border-color: rgba(255,255,255,0.25); height: 32px; width: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
                     <button class="btn btn-danger btn-sm" onclick="doLogout()">
                         <i class="fa-solid fa-power-off"></i> Salir
                     </button>
@@ -6385,6 +6432,86 @@
             showToast('Acceso Revocado', `${name} fue eliminado del sistema.`, 'warning');
         } catch (e) { showToast('Error', 'No se pudo eliminar.', 'error'); }
     }
+
+    window.openCredentialsModal = function() {
+        if (!currentUser) return;
+        document.getElementById('ec-username').value = currentUser.username || '';
+        document.getElementById('ec-new-password').value = '';
+        document.getElementById('ec-confirm-password').value = '';
+        document.getElementById('ec-current-password').value = '';
+        document.getElementById('credentials-error').style.display = 'none';
+        
+        openModal('modal-edit-credentials');
+    };
+
+    window.saveCredentials = async function() {
+        const username = document.getElementById('ec-username').value.trim();
+        const newPassword = document.getElementById('ec-new-password').value;
+        const confirmPassword = document.getElementById('ec-confirm-password').value;
+        const currentPassword = document.getElementById('ec-current-password').value;
+        
+        const errEl = document.getElementById('credentials-error');
+        const errText = document.getElementById('credentials-error-text');
+        
+        if (!username) {
+            errEl.style.display = 'block';
+            errText.textContent = 'El nombre de usuario no puede estar vacío.';
+            return;
+        }
+        
+        if (newPassword && newPassword !== confirmPassword) {
+            errEl.style.display = 'block';
+            errText.textContent = 'La nueva contraseña y su confirmación no coinciden.';
+            return;
+        }
+        
+        if (!currentPassword) {
+            errEl.style.display = 'block';
+            errText.textContent = 'Debes ingresar tu contraseña actual para autorizar los cambios.';
+            return;
+        }
+        
+        const btn = document.getElementById('btn-save-credentials');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        
+        try {
+            const res = await fetch(`${SERVER_URL}/api/users/${currentUser.id}/credentials`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    password: newPassword || null,
+                    currentPassword: currentPassword
+                })
+            });
+            const data = await res.json();
+            
+            if (!res.ok) {
+                errEl.style.display = 'block';
+                errText.textContent = data.error || 'No se pudieron actualizar las credenciales.';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios';
+                return;
+            }
+            
+            // Update session
+            currentUser.username = data.username;
+            saveSession();
+            
+            // Refresh view
+            setupIntranetView();
+            try { setupClassifiedView(); } catch(err){}
+            
+            closeModal('modal-edit-credentials');
+            showToast('Credenciales Actualizadas', 'Tu usuario y/o contraseña han sido actualizados con éxito.', 'success');
+        } catch (e) {
+            errEl.style.display = 'block';
+            errText.textContent = 'Error de conexión con el servidor.';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios';
+        }
+    };
 
     // ============================================================
     // SIGMA-7 ADMIN
